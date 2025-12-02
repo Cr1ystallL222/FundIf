@@ -1,87 +1,131 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import "./interfaces/IOracle.sol";
+/**
+ * @title IOracle
+ * @notice Interface for prediction market oracles used by FundIf campaigns
+ * @dev Defines the standard interface for querying prediction market outcomes.
+ *      Any oracle implementation (mock, UMA, Chainlink, Polymarket) must conform to this interface.
+ */
+interface IOracle {
+    /**
+     * @notice Checks if a prediction condition has been resolved
+     * @param conditionId The unique identifier for the prediction condition
+     * @return True if the condition has been resolved, false otherwise
+     */
+    function isResolved(bytes32 conditionId) external view returns (bool);
+
+    /**
+     * @notice Gets the outcome of a resolved prediction condition
+     * @param conditionId The unique identifier for the prediction condition
+     * @return True if the outcome was YES, false if NO
+     */
+    function getOutcome(bytes32 conditionId) external view returns (bool);
+}
 
 /**
  * @title MockOracle
- * @author Prediction Market Demo
- * @notice A mock oracle contract for testing and demonstration purposes
- * @dev Simulates Polymarket resolution functionality for demo purposes.
- *      The owner can manually set outcomes for any condition ID.
+ * @author FundIf Team
+ * @notice A mock prediction market oracle for demonstration and testing purposes
+ * @dev Simulates a prediction market oracle like Polymarket or UMA for hackathon demo.
+ *      In production, this would be replaced with actual oracle integrations.
+ *      This contract allows an owner to manually set outcomes for prediction conditions,
+ *      which Campaign contracts then query to determine fund release or refund.
+ *
+ * @custom:security-contact security@fundif.example
+ *
+ * Example Usage Flow:
+ *      1. Deploy MockOracle
+ *      2. Create Campaign with oracle address and conditionId
+ *      3. Users contribute funds to Campaign
+ *      4. Owner calls setOutcome(conditionId, true/false) when real-world event resolves
+ *      5. Anyone calls Campaign.resolve() which reads oracle and releases funds or enables refunds
  */
 contract MockOracle is IOracle {
-    /*//////////////////////////////////////////////////////////////
-                                 STATE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The owner address authorized to set outcomes
-    address public immutable owner;
-
-    /// @notice Mapping of condition ID to its resolved outcome
-    /// @dev true = YES outcome, false = NO outcome
-    mapping(bytes32 conditionId => bool outcome) public outcomes;
-
-    /// @notice Mapping of condition ID to its resolution status
-    mapping(bytes32 conditionId => bool isResolved) public resolved;
-
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted when an outcome is set for a condition
-    /// @param conditionId The unique identifier of the condition
-    /// @param outcome The resolved outcome (true = YES, false = NO)
+    /**
+     * @notice Emitted when an outcome is set for a prediction condition
+     * @param conditionId The unique identifier for the prediction condition
+     * @param outcome The resolved outcome (true = YES, false = NO)
+     */
     event OutcomeSet(bytes32 indexed conditionId, bool outcome);
 
     /*//////////////////////////////////////////////////////////////
-                                 ERRORS
+                            STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Thrown when a non-owner attempts to call an owner-only function
-    error NotOwner();
+    /**
+     * @notice The address authorized to set prediction outcomes
+     * @dev Set to msg.sender in constructor. In production, this role would be
+     *      replaced by decentralized oracle mechanisms.
+     */
+    address public owner;
 
-    /// @notice Thrown when attempting to get outcome of an unresolved condition
-    /// @param conditionId The condition that has not been resolved
-    error ConditionNotResolved(bytes32 conditionId);
+    /**
+     * @notice Stores the YES/NO outcome for each resolved condition
+     * @dev Maps conditionId => outcome where true = YES and false = NO.
+     *      Only meaningful when resolved[conditionId] is true.
+     */
+    mapping(bytes32 => bool) public outcomes;
+
+    /**
+     * @notice Tracks whether each condition has been resolved
+     * @dev Maps conditionId => isResolved. Must be true before outcome can be read.
+     *      Prevents reading uninitialized default values as valid outcomes.
+     */
+    mapping(bytes32 => bool) public resolved;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Constructs the MockOracle contract
-     * @dev Sets msg.sender as the immutable owner
+     * @notice Initializes the MockOracle with the deployer as owner
+     * @dev The owner has exclusive rights to set prediction outcomes.
+     *      This centralized control is acceptable for hackathon demos but
+     *      would be replaced with decentralized resolution in production.
      */
     constructor() {
         owner = msg.sender;
     }
 
     /*//////////////////////////////////////////////////////////////
-                               MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Restricts function access to the owner
-    modifier onlyOwner() {
-        if (msg.sender != owner) {
-            revert NotOwner();
-        }
-        _;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                            OWNER FUNCTIONS
+                            ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Sets the outcome for a specific condition
-     * @dev Only callable by the owner. Marks the condition as resolved
-     *      and emits an OutcomeSet event. Can be called multiple times
-     *      to update an outcome if needed for testing purposes.
-     * @param conditionId The unique identifier of the condition to resolve
-     * @param outcome The outcome to set (true = YES wins, false = NO wins)
+     * @notice Sets the outcome for a prediction condition
+     * @dev Only callable by the contract owner. Marks the condition as resolved
+     *      and stores the outcome. Once resolved, subsequent calls will overwrite
+     *      the previous outcome (acceptable for demo; production would prevent this).
+     *
+     * @param conditionId The unique identifier for the prediction condition.
+     *        For demos, use keccak256 of a descriptive string like
+     *        keccak256("eth-price-above-5000-jan-2025").
+     *        In production, would map to actual Polymarket market IDs.
+     *
+     * @param outcome The resolved outcome:
+     *        - true (YES): The predicted event occurred → funds release to creator
+     *        - false (NO): The predicted event did not occur → contributors get refunds
+     *
+     * Emits an {OutcomeSet} event for off-chain indexing and transparency.
+     *
+     * Requirements:
+     * - Caller MUST be the contract owner
+     *
+     * Example:
+     * ```
+     * // Prediction: "Will Bitcoin ETF be approved by SEC in January 2024?"
+     * bytes32 conditionId = keccak256(abi.encodePacked("btc-etf-sec-jan-2024"));
+     * mockOracle.setOutcome(conditionId, true); // ETF was approved!
+     * ```
      */
-    function setOutcome(bytes32 conditionId, bool outcome) external onlyOwner {
+    function setOutcome(bytes32 conditionId, bool outcome) external {
+        require(msg.sender == owner, "MockOracle: caller is not owner");
+
         outcomes[conditionId] = outcome;
         resolved[conditionId] = true;
 
@@ -89,28 +133,57 @@ contract MockOracle is IOracle {
     }
 
     /*//////////////////////////////////////////////////////////////
-                            VIEW FUNCTIONS
+                           IORACLE INTERFACE
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Checks whether a condition has been resolved
-     * @param conditionId The unique identifier of the condition to check
-     * @return True if the condition has been resolved, false otherwise
+     * @notice Checks if a prediction condition has been resolved
+     * @dev Part of the IOracle interface. Campaign contracts should call this
+     *      before calling getOutcome() to avoid reverts. Can also be used by
+     *      frontend to show pending vs resolved status.
+     *
+     * @param conditionId The unique identifier for the prediction condition
+     * @return True if setOutcome() has been called for this conditionId
+     *
+     * Example usage in Campaign contract:
+     * ```
+     * function resolve() external {
+     *     require(oracle.isResolved(conditionId), "Prediction not yet resolved");
+     *     bool outcome = oracle.getOutcome(conditionId);
+     *     // ... handle fund distribution
+     * }
+     * ```
      */
-    function isResolved(bytes32 conditionId) external view returns (bool) {
+    function isResolved(bytes32 conditionId) external view override returns (bool) {
         return resolved[conditionId];
     }
 
     /**
-     * @notice Gets the outcome of a resolved condition
-     * @dev Reverts if the condition has not been resolved yet
-     * @param conditionId The unique identifier of the condition
-     * @return The outcome of the condition (true = YES, false = NO)
+     * @notice Gets the outcome of a resolved prediction condition
+     * @dev Part of the IOracle interface. Reverts if condition is unresolved to
+     *      prevent treating the default `false` value as a valid NO outcome.
+     *      Campaign contracts use this to determine fund release vs refund logic.
+     *
+     * @param conditionId The unique identifier for the prediction condition
+     * @return outcome True if YES (funds release), false if NO (refunds enabled)
+     *
+     * Requirements:
+     * - Condition MUST be resolved (setOutcome must have been called)
+     *
+     * Example usage in Campaign contract:
+     * ```
+     * bool outcome = oracle.getOutcome(conditionId);
+     * if (outcome) {
+     *     // YES outcome: transfer pooled funds to campaign creator
+     *     payable(creator).transfer(address(this).balance);
+     * } else {
+     *     // NO outcome: enable refund claims for all contributors
+     *     refundsEnabled = true;
+     * }
+     * ```
      */
-    function getOutcome(bytes32 conditionId) external view returns (bool) {
-        if (!resolved[conditionId]) {
-            revert ConditionNotResolved(conditionId);
-        }
+    function getOutcome(bytes32 conditionId) external view override returns (bool) {
+        require(resolved[conditionId], "MockOracle: condition not resolved");
         return outcomes[conditionId];
     }
 }

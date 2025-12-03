@@ -1,27 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-/**
- * @title IOracle
- * @notice Interface for prediction market oracles used by FundIf campaigns
- * @dev Defines the standard interface for querying prediction market outcomes.
- *      Any oracle implementation (mock, UMA, Chainlink, Polymarket) must conform to this interface.
- */
-interface IOracle {
-    /**
-     * @notice Checks if a prediction condition has been resolved
-     * @param conditionId The unique identifier for the prediction condition
-     * @return True if the condition has been resolved, false otherwise
-     */
-    function isResolved(bytes32 conditionId) external view returns (bool);
-
-    /**
-     * @notice Gets the outcome of a resolved prediction condition
-     * @param conditionId The unique identifier for the prediction condition
-     * @return True if the outcome was YES, false if NO
-     */
-    function getOutcome(bytes32 conditionId) external view returns (bool);
-}
+import "./interfaces/IOracle.sol";
 
 /**
  * @title MockOracle

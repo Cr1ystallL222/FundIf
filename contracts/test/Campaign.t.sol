@@ -49,12 +49,11 @@ contract FundIfTest is Test {
         address indexed creator,
         string title,
         uint256 goalAmount,
-        address recipient,
         bytes32 conditionId,
         uint256 deadline
     );
     
-    event Funded(address indexed funder, uint256 amount);
+    event Funded(address indexed funder, uint256 amount, uint256 totalFunded);
     event Resolved(bool outcome);
     event Withdrawn(address indexed recipient, uint256 amount);
     event Refunded(address indexed funder, uint256 amount);
@@ -209,7 +208,6 @@ contract FundIfTest is Test {
             creator,
             "Test Campaign",
             goalAmount,
-            recipient,
             conditionId,
             deadline
         );
@@ -504,7 +502,7 @@ contract FundIfTest is Test {
         
         // Expect Funded event with correct parameters
         vm.expectEmit(true, false, false, true, address(campaign));
-        emit Funded(funder1, fundAmount);
+        emit Funded(funder1, fundAmount, fundAmount);
         
         campaign.fund(fundAmount);
         vm.stopPrank();

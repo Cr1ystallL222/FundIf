@@ -10,48 +10,11 @@ import {
 import { parseUnits, formatUnits } from 'viem';
 import type { Address } from 'viem';
 
-const USDC_ADDRESS = 'PASTE_YOUR_MOCK_USDC_ADDRESS_HERE' as Address;
+// 1. & 2. Import Central Configs
+import { USDC_ADDRESS } from '@/lib/contracts/addresses';
+import { ERC20ABI, CampaignABI } from '@/lib/contracts/abis';
+
 const USDC_DECIMALS = 6;
-
-const usdcAbi = [
-  {
-    type: 'function',
-    name: 'balanceOf',
-    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'allowance',
-    inputs: [
-      { name: 'owner', type: 'address', internalType: 'address' },
-      { name: 'spender', type: 'address', internalType: 'address' },
-    ],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'approve',
-    inputs: [
-      { name: 'spender', type: 'address', internalType: 'address' },
-      { name: 'value', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
-    stateMutability: 'nonpayable',
-  },
-] as const;
-
-const campaignAbi = [
-  {
-    type: 'function',
-    name: 'fund',
-    inputs: [{ name: 'amount', type: 'uint256', internalType: 'uint256' }],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-] as const;
 
 interface FundFormProps {
   campaignAddress: string;
@@ -61,12 +24,15 @@ export function FundForm({ campaignAddress }: FundFormProps) {
   const [amount, setAmount] = useState('');
   const { address, isConnected } = useAccount();
 
+  // Ensure addresses are strictly typed for Viem/Wagmi
   const campaignAddr = campaignAddress as Address;
+  const usdcAddr = USDC_ADDRESS as Address;
 
   // Read USDC balance
+  // 3. Swapped inline ABI for ERC20ABI
   const { data: balance, refetch: refetchBalance } = useReadContract({
-    address: USDC_ADDRESS,
-    abi: usdcAbi,
+    address: usdcAddr,
+    abi: ERC20ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
@@ -75,9 +41,10 @@ export function FundForm({ campaignAddress }: FundFormProps) {
   });
 
   // Read allowance
+  // 3. Swapped inline ABI for ERC20ABI
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: USDC_ADDRESS,
-    abi: usdcAbi,
+    address: usdcAddr,
+    abi: ERC20ABI,
     functionName: 'allowance',
     args: address ? [address, campaignAddr] : undefined,
     query: {
@@ -130,6 +97,7 @@ export function FundForm({ campaignAddress }: FundFormProps) {
   // Determine if approval is needed
   const needsApproval = useMemo(() => {
     if (parsedAmount === 0n) return false;
+    // allowance is bigint | undefined
     return parsedAmount > (allowance ?? 0n);
   }, [parsedAmount, allowance]);
 
@@ -153,8 +121,8 @@ export function FundForm({ campaignAddress }: FundFormProps) {
 
   const handleApprove = () => {
     writeApprove({
-      address: USDC_ADDRESS,
-      abi: usdcAbi,
+      address: usdcAddr,
+      abi: ERC20ABI,
       functionName: 'approve',
       args: [campaignAddr, parsedAmount],
     });
@@ -163,12 +131,13 @@ export function FundForm({ campaignAddress }: FundFormProps) {
   const handleFund = () => {
     writeFund({
       address: campaignAddr,
-      abi: campaignAbi,
+      abi: CampaignABI,
       functionName: 'fund',
       args: [parsedAmount],
     });
   };
 
+  // 4. Logic preserved
   const handleSubmit = () => {
     if (needsApproval) {
       handleApprove();

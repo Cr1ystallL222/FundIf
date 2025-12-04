@@ -1,66 +1,99 @@
-// lib/contracts/abis.ts
-
 export const CampaignFactoryABI = [
-  // Read Functions
+  {
+    type: "constructor",
+    inputs: [
+      { name: "_usdc", type: "address", internalType: "address" },
+      { name: "_oracle", type: "address", internalType: "address" },
+    ],
+    stateMutability: "nonpayable",
+  },
   {
     type: "function",
-    name: "getCampaigns",
-    inputs: [],
-    outputs: [
-      {
-        name: "",
-        type: "address[]",
-        internalType: "address[]",
-      },
-    ],
+    name: "campaigns",
+    inputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
     stateMutability: "view",
   },
-  // Write Functions
+  {
+    type: "function",
+    name: "campaignsByCreator",
+    inputs: [
+      { name: "", type: "address", internalType: "address" },
+      { name: "", type: "uint256", internalType: "uint256" },
+    ],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
   {
     type: "function",
     name: "createCampaign",
     inputs: [
-      {
-        name: "title",
-        type: "string",
-        internalType: "string",
-      },
-      {
-        name: "description",
-        type: "string",
-        internalType: "string",
-      },
-      {
-        name: "goalAmount",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "recipient",
-        type: "address",
-        internalType: "address",
-      },
-      {
-        name: "conditionId",
-        type: "bytes32",
-        internalType: "bytes32",
-      },
-      {
-        name: "deadline",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "title", type: "string", internalType: "string" },
+      { name: "description", type: "string", internalType: "string" },
+      { name: "goalAmount", type: "uint256", internalType: "uint256" },
+      { name: "recipient", type: "address", internalType: "address" },
+      { name: "conditionId", type: "bytes32", internalType: "bytes32" },
+      { name: "deadline", type: "uint256", internalType: "uint256" },
     ],
     outputs: [
-      {
-        name: "campaignAddress",
-        type: "address",
-        internalType: "address",
-      },
+      { name: "campaignAddress", type: "address", internalType: "address" },
     ],
     stateMutability: "nonpayable",
   },
-  // Events
+  {
+    type: "function",
+    name: "getCampaignCount",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getCampaigns",
+    inputs: [],
+    outputs: [{ name: "", type: "address[]", internalType: "address[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getCampaignsByCreator",
+    inputs: [{ name: "creator", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "address[]", internalType: "address[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getCampaignsRange",
+    inputs: [
+      { name: "start", type: "uint256", internalType: "uint256" },
+      { name: "end", type: "uint256", internalType: "uint256" },
+    ],
+    outputs: [
+      { name: "result", type: "address[]", internalType: "address[]" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "isCampaign",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "bool", internalType: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "oracle",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "usdc",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
   {
     type: "event",
     name: "CampaignCreated",
@@ -107,85 +140,151 @@ export const CampaignFactoryABI = [
 ] as const;
 
 export const CampaignABI = [
-  // Read Functions
+  {
+    type: "constructor",
+    inputs: [
+      { name: "_usdc", type: "address", internalType: "address" },
+      { name: "_oracle", type: "address", internalType: "address" },
+      { name: "_creator", type: "address", internalType: "address" },
+      { name: "_recipient", type: "address", internalType: "address" },
+      { name: "_title", type: "string", internalType: "string" },
+      { name: "_description", type: "string", internalType: "string" },
+      { name: "_goalAmount", type: "uint256", internalType: "uint256" },
+      { name: "_conditionId", type: "bytes32", internalType: "bytes32" },
+      { name: "_deadline", type: "uint256", internalType: "uint256" },
+    ],
+    stateMutability: "nonpayable",
+  },
   {
     type: "function",
-    name: "title",
+    name: "conditionId",
     inputs: [],
-    outputs: [
-      {
-        name: "",
-        type: "string",
-        internalType: "string",
-      },
-    ],
+    outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
     stateMutability: "view",
   },
   {
     type: "function",
-    name: "goalAmount",
-    inputs: [],
-    outputs: [
-      {
-        name: "",
-        type: "uint256",
-        internalType: "uint256",
-      },
-    ],
+    name: "contributions",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
   {
     type: "function",
-    name: "totalFunded",
+    name: "contributors",
+    inputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "creator",
     inputs: [],
-    outputs: [
-      {
-        name: "",
-        type: "uint256",
-        internalType: "uint256",
-      },
-    ],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
     stateMutability: "view",
   },
   {
     type: "function",
     name: "deadline",
     inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "description",
+    inputs: [],
+    outputs: [{ name: "", type: "string", internalType: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "fund",
+    inputs: [{ name: "amount", type: "uint256", internalType: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "getCampaignInfo",
+    inputs: [],
     outputs: [
       {
-        name: "",
-        type: "uint256",
-        internalType: "uint256",
+        name: "info",
+        type: "tuple",
+        internalType: "struct Campaign.CampaignInfo",
+        components: [
+          { name: "title", type: "string", internalType: "string" },
+          { name: "description", type: "string", internalType: "string" },
+          { name: "creator", type: "address", internalType: "address" },
+          { name: "recipient", type: "address", internalType: "address" },
+          { name: "goalAmount", type: "uint256", internalType: "uint256" },
+          { name: "totalFunded", type: "uint256", internalType: "uint256" },
+          { name: "deadline", type: "uint256", internalType: "uint256" },
+          { name: "conditionId", type: "bytes32", internalType: "bytes32" },
+          { name: "resolved", type: "bool", internalType: "bool" },
+          { name: "outcomeYes", type: "bool", internalType: "bool" },
+          { name: "withdrawn", type: "bool", internalType: "bool" },
+        ],
       },
     ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getContribution",
+    inputs: [{ name: "funder", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getContributors",
+    inputs: [],
+    outputs: [{ name: "", type: "address[]", internalType: "address[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "goalAmount",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "oracle",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "contract IOracle" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "outcomeYes",
+    inputs: [],
+    outputs: [{ name: "", type: "bool", internalType: "bool" }],
     stateMutability: "view",
   },
   {
     type: "function",
     name: "recipient",
     inputs: [],
-    outputs: [
-      {
-        name: "",
-        type: "address",
-        internalType: "address",
-      },
-    ],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
     stateMutability: "view",
   },
-  // Write Functions
   {
     type: "function",
-    name: "fund",
-    inputs: [
-      {
-        name: "amount",
-        type: "uint256",
-        internalType: "uint256",
-      },
-    ],
+    name: "refund",
+    inputs: [],
     outputs: [],
     stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "refunded",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "bool", internalType: "bool" }],
+    stateMutability: "view",
   },
   {
     type: "function",
@@ -196,6 +295,34 @@ export const CampaignABI = [
   },
   {
     type: "function",
+    name: "resolved",
+    inputs: [],
+    outputs: [{ name: "", type: "bool", internalType: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "title",
+    inputs: [],
+    outputs: [{ name: "", type: "string", internalType: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "totalFunded",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "usdc",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "contract IERC20" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "withdraw",
     inputs: [],
     outputs: [],
@@ -203,12 +330,11 @@ export const CampaignABI = [
   },
   {
     type: "function",
-    name: "refund",
+    name: "withdrawn",
     inputs: [],
-    outputs: [],
-    stateMutability: "nonpayable",
+    outputs: [{ name: "", type: "bool", internalType: "bool" }],
+    stateMutability: "view",
   },
-  // Events
   {
     type: "event",
     name: "Funded",
@@ -236,14 +362,28 @@ export const CampaignABI = [
   },
   {
     type: "event",
-    name: "Resolved",
+    name: "Refunded",
     inputs: [
       {
-        name: "outcome",
-        type: "bool",
-        indexed: false,
-        internalType: "bool",
+        name: "funder",
+        type: "address",
+        indexed: true,
+        internalType: "address",
       },
+      {
+        name: "amount",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "Resolved",
+    inputs: [
+      { name: "outcome", type: "bool", indexed: false, internalType: "bool" },
     ],
     anonymous: false,
   },
@@ -266,23 +406,74 @@ export const CampaignABI = [
     ],
     anonymous: false,
   },
+] as const;
+
+export const ERC20ABI = [
   {
-    type: "event",
-    name: "Refunded",
+    type: "function",
+    name: "approve",
     inputs: [
       {
-        name: "funder",
+        name: "spender",
         type: "address",
-        indexed: true,
         internalType: "address",
       },
       {
         name: "amount",
         type: "uint256",
-        indexed: false,
         internalType: "uint256",
       },
     ],
-    anonymous: false,
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "allowance",
+    inputs: [
+      {
+        name: "owner",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "spender",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    inputs: [
+      {
+        name: "account",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
   },
 ] as const;

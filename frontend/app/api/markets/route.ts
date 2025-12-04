@@ -2,35 +2,45 @@
 
 import { NextResponse } from 'next/server';
 
-// Type definitions for Polymarket API response
+// Enable Edge Runtime for better performance and global distribution
+export const runtime = 'edge';
+
+// ============ Type Definitions ============
+
 interface PolymarketMarket {
   id: string;
   question: string;
   conditionId: string;
-  outcomes: string; // JSON string like '["Yes", "No"]'
+  slug: string;
+  outcomes: string;           // JSON string: '["Yes", "No"]'
+  outcomePrices?: string;     // JSON string: '[0.65, 0.35]'
   active: boolean;
   closed: boolean;
-  outcomePrices?: string;
+  endDate?: string;
 }
 
 interface PolymarketEvent {
   id: string;
   title: string;
   slug: string;
-  description: string;
+  description?: string;
   markets: PolymarketMarket[];
   active: boolean;
   closed: boolean;
+  endDate?: string;
 }
 
-// Clean response type for our frontend
+// Clean response type matching your requirements
 export interface CleanMarket {
-  eventId: string;
-  eventTitle: string;
   conditionId: string;
   question: string;
+  slug: string;
+  endDate: string | null;
+  outcomePrices: number[];
   outcomes: string[];
-  outcomePrices?: number[];
+  // Bonus: include event context
+  eventTitle: string;
+  eventSlug: string;
 }
 
 export interface MarketsApiResponse {
@@ -40,128 +50,170 @@ export interface MarketsApiResponse {
   error?: string;
 }
 
+// ============ Constants ============
+
+const POLYMARKET_GAMMA_API = 'https://gamma-api.polymarket.com';
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 100;
+const CACHE_TTL = 60; // seconds
+
+// ============ Helper Functions ============
+
+function parseJsonField<T>(value: string | T | undefined, fallback: T): T {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value !== 'string') return value as T;
+  
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeOutcomePrices(prices: unknown[]): number[] {
+  return prices.map((p) => {
+    const num = Number(p);
+    // Round to 4 decimal places (e.g., 0.6523)
+    return isNaN(num) ? 0 : Math.round(num * 10000) / 10000;
+  });
+}
+
+// ============ Main Handler ============
+
 export async function GET(request: Request) {
   try {
-    // Parse query params for optional filtering
+    // 1. Parse query parameters
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') || '100';
-    const search = searchParams.get('search') || '';
+    const search = searchParams.get('search')?.trim() || '';
+    const limitParam = parseInt(searchParams.get('limit') || '', 10);
+    const limit = Math.min(
+      isNaN(limitParam) ? DEFAULT_LIMIT : limitParam,
+      MAX_LIMIT
+    );
 
-    // Fetch active, non-closed events from Polymarket
-    const apiUrl = new URL('https://gamma-api.polymarket.com/events');
+    // 2. Build Polymarket API URL
+    const apiUrl = new URL(`${POLYMARKET_GAMMA_API}/events`);
     apiUrl.searchParams.set('active', 'true');
     apiUrl.searchParams.set('closed', 'false');
-    apiUrl.searchParams.set('limit', limit);
-    
+    apiUrl.searchParams.set('limit', String(limit));
+
+    // Search by title if query provided
     if (search) {
       apiUrl.searchParams.set('title_like', search);
     }
 
+    // 3. Fetch from Polymarket with ISR caching
     const response = await fetch(apiUrl.toString(), {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'NextJS-Crowdfunding-App/1.0',
+        'User-Agent': 'NextJS-Polymarket-Proxy/1.0',
       },
-      // Revalidate cache every 60 seconds
-      next: { revalidate: 60 },
+      next: {
+        revalidate: CACHE_TTL,
+        tags: ['polymarket-markets'],
+      },
     });
 
+    // 4. Handle API errors
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Polymarket API Error:', response.status, errorText);
-      throw new Error(`Polymarket API responded with status: ${response.status}`);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error(`[Polymarket API] ${response.status}: ${errorText}`);
+      
+      throw new Error(
+        response.status === 429
+          ? 'Rate limited by Polymarket API'
+          : `Polymarket API error: ${response.status}`
+      );
     }
 
+    // 5. Parse and transform response
     const events: PolymarketEvent[] = await response.json();
-
-    // Transform to clean format
     const markets: CleanMarket[] = [];
 
     for (const event of events) {
-      // Skip events without markets
-      if (!event.markets || !Array.isArray(event.markets)) {
+      // Skip events without valid markets array
+      if (!Array.isArray(event.markets) || event.markets.length === 0) {
         continue;
       }
 
       for (const market of event.markets) {
-        // Skip markets without a condition ID (required for betting)
+        // Validate required fields
         if (!market.conditionId || !market.question) {
           continue;
         }
 
-        // Skip inactive or closed markets
+        // Skip closed/inactive markets
         if (market.closed || !market.active) {
           continue;
         }
 
-        // Parse outcomes - can be a JSON string or array
-        let outcomes: string[] = ['Yes', 'No']; // Default
-        try {
-          if (typeof market.outcomes === 'string') {
-            outcomes = JSON.parse(market.outcomes);
-          } else if (Array.isArray(market.outcomes)) {
-            outcomes = market.outcomes;
-          }
-        } catch {
-          console.warn(`Failed to parse outcomes for market ${market.id}`);
-        }
+        // Parse outcomes (default to Yes/No binary)
+        const outcomes = parseJsonField<string[]>(
+          market.outcomes,
+          ['Yes', 'No']
+        );
 
-        // Parse outcome prices if available
-        let outcomePrices: number[] | undefined;
-        try {
-          if (market.outcomePrices) {
-            const parsed = typeof market.outcomePrices === 'string' 
-              ? JSON.parse(market.outcomePrices) 
-              : market.outcomePrices;
-            if (Array.isArray(parsed)) {
-              outcomePrices = parsed.map(Number);
-            }
-          }
-        } catch {
-          // Prices are optional, ignore parse errors
-        }
+        // Parse and normalize outcome prices
+        const rawPrices = parseJsonField<unknown[]>(
+          market.outcomePrices,
+          []
+        );
+        const outcomePrices = normalizeOutcomePrices(rawPrices);
 
         markets.push({
-          eventId: event.id,
-          eventTitle: event.title || 'Untitled Event',
           conditionId: market.conditionId,
           question: market.question,
-          outcomes,
+          slug: market.slug || event.slug || market.conditionId,
+          endDate: market.endDate || event.endDate || null,
           outcomePrices,
+          outcomes,
+          eventTitle: event.title || 'Untitled Event',
+          eventSlug: event.slug || '',
         });
       }
     }
 
-    // Sort by event title for consistent ordering
-    markets.sort((a, b) => a.eventTitle.localeCompare(b.eventTitle));
+    // 6. Sort results alphabetically by question
+    markets.sort((a, b) => a.question.localeCompare(b.question));
 
-    const responseData: MarketsApiResponse = {
-      success: true,
-      data: markets,
-      count: markets.length,
-    };
-
-    return NextResponse.json(responseData, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+    // 7. Return success response
+    return NextResponse.json<MarketsApiResponse>(
+      {
+        success: true,
+        data: markets,
+        count: markets.length,
       },
-    });
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': `public, s-maxage=${CACHE_TTL}, stale-while-revalidate=300`,
+          'X-Total-Count': String(markets.length),
+        },
+      }
+    );
 
   } catch (error) {
-    console.error('Error fetching Polymarket events:', error);
+    // Log error for debugging
+    console.error('[Markets API Error]', error);
 
-    const errorResponse: MarketsApiResponse = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch markets',
-      data: [],
-      count: 0,
-    };
+    // Determine appropriate status code
+    const status = error instanceof Error && error.message.includes('Rate limited')
+      ? 429
+      : 500;
 
-    return NextResponse.json(errorResponse, { 
-      status: 500,
-      headers: {
-        'Cache-Control': 'no-store',
+    return NextResponse.json<MarketsApiResponse>(
+      {
+        success: false,
+        data: [],
+        count: 0,
+        error: error instanceof Error ? error.message : 'Failed to fetch markets',
       },
-    });
+      {
+        status,
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      }
+    );
   }
 }

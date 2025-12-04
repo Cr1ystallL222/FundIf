@@ -2,20 +2,39 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Search, TrendingUp, Loader2, ExternalLink, Check } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  ChevronDown,
+  Search,
+  TrendingUp,
+  Loader2,
+  ExternalLink,
+  Check,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react';
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
-interface Market {
+// Match the API response type from /api/markets
+interface CleanMarket {
   conditionId: string;
   question: string;
-  category?: string;
-  volume?: string;
-  endDate?: string;
-  probability?: number;
+  slug: string;
+  endDate: string | null;
+  outcomePrices: number[];
+  outcomes: string[];
+  eventTitle: string;
+  eventSlug: string;
+}
+
+interface MarketsApiResponse {
+  success: boolean;
+  data: CleanMarket[];
+  count: number;
+  error?: string;
 }
 
 interface MarketSelectorProps {
@@ -26,46 +45,102 @@ interface MarketSelectorProps {
 }
 
 // =============================================================================
-// MOCK DATA (Replace with actual API call)
+// CUSTOM HOOKS
 // =============================================================================
 
-const MOCK_MARKETS: Market[] = [
-  {
-    conditionId: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-    question: 'Will Bitcoin reach $100,000 by end of 2025?',
-    category: 'Crypto',
-    volume: '$2.4M',
-    probability: 65,
-  },
-  {
-    conditionId: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-    question: 'Will the Paris Agreement climate goals be met by 2030?',
-    category: 'Climate',
-    volume: '$890K',
-    probability: 32,
-  },
-  {
-    conditionId: '0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba',
-    question: 'Will SpaceX successfully land humans on Mars before 2030?',
-    category: 'Space',
-    volume: '$1.2M',
-    probability: 18,
-  },
-  {
-    conditionId: '0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321',
-    question: 'Will a major AI breakthrough occur in 2025?',
-    category: 'Technology',
-    volume: '$3.1M',
-    probability: 72,
-  },
-  {
-    conditionId: '0x1111222233334444555566667777888899990000aaaabbbbccccddddeeee0000',
-    question: 'Will renewable energy exceed 50% of global power by 2030?',
-    category: 'Energy',
-    volume: '$560K',
-    probability: 45,
-  },
-];
+/**
+ * Debounce hook to delay value updates
+ */
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+/**
+ * Format outcome prices as readable percentages
+ */
+function formatOdds(prices: number[], outcomes: string[]): string {
+  if (!prices || prices.length === 0) return 'No odds available';
+
+  return outcomes
+    .map((outcome, index) => {
+      const price = prices[index];
+      if (price === undefined) return null;
+      const percentage = Math.round(price * 100);
+      return `${outcome}: ${percentage}%`;
+    })
+    .filter(Boolean)
+    .join(' / ');
+}
+
+/**
+ * Format ISO date string to readable format
+ */
+function formatEndDate(endDate: string | null): string {
+  if (!endDate) return '';
+
+  try {
+    const date = new Date(endDate);
+    const now = new Date();
+    const diffDays = Math.ceil(
+      (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // Show relative time for near dates
+    if (diffDays < 0) return 'Ended';
+    if (diffDays === 0) return 'Ends today';
+    if (diffDays === 1) return 'Ends tomorrow';
+    if (diffDays <= 7) return `Ends in ${diffDays} days`;
+
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Get color classes for outcome badges
+ */
+function getOutcomeColor(outcome: string, index: number): string {
+  const lower = outcome.toLowerCase();
+  
+  if (lower === 'yes') return 'bg-green-500/20 text-green-400';
+  if (lower === 'no') return 'bg-red-500/20 text-red-400';
+  
+  // For non-binary markets, alternate colors
+  const colors = [
+    'bg-blue-500/20 text-blue-400',
+    'bg-purple-500/20 text-purple-400',
+    'bg-amber-500/20 text-amber-400',
+    'bg-cyan-500/20 text-cyan-400',
+  ];
+  return colors[index % colors.length];
+}
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const DEBOUNCE_DELAY = 300; // ms
+const API_ENDPOINT = '/api/markets';
+const DEFAULT_LIMIT = 20;
 
 // =============================================================================
 // COMPONENT
@@ -77,29 +152,117 @@ export default function MarketSelector({
   initialConditionId = '',
   className = '',
 }: MarketSelectorProps) {
+  // State
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [markets, setMarkets] = useState<Market[]>(MOCK_MARKETS);
-  const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [markets, setMarkets] = useState<CleanMarket[]>([]);
+  const [selectedMarket, setSelectedMarket] = useState<CleanMarket | null>(null);
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
+  // Refs
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Find initial market if provided
+  // Debounce search query
+  const debouncedSearch = useDebounce(searchQuery, DEBOUNCE_DELAY);
+
+  // ---------------------------------------------------------------------------
+  // API FETCH
+  // ---------------------------------------------------------------------------
+
+  const fetchMarkets = useCallback(async (search: string, signal?: AbortSignal) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams({
+        limit: String(DEFAULT_LIMIT),
+      });
+      
+      if (search.trim()) {
+        params.set('search', search.trim());
+      }
+
+      const response = await fetch(`${API_ENDPOINT}?${params}`, {
+        signal,
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          response.status === 429
+            ? 'Too many requests. Please wait a moment.'
+            : `Failed to fetch markets (${response.status})`
+        );
+      }
+
+      const data: MarketsApiResponse = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch markets');
+      }
+
+      setMarkets(data.data);
+      setHasInitialLoad(true);
+    } catch (err) {
+      // Ignore abort errors
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+      
+      console.error('Error fetching markets:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load markets');
+      setMarkets([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // EFFECTS
+  // ---------------------------------------------------------------------------
+
+  // Fetch markets when dropdown opens or debounced search changes
   useEffect(() => {
-    if (initialConditionId) {
+    if (!isOpen) return;
+
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    
+    fetchMarkets(debouncedSearch, abortControllerRef.current.signal);
+
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [isOpen, debouncedSearch, fetchMarkets]);
+
+  // Set initial market if provided
+  useEffect(() => {
+    if (initialConditionId && markets.length > 0 && !selectedMarket) {
       const market = markets.find((m) => m.conditionId === initialConditionId);
       if (market) {
         setSelectedMarket(market);
       }
     }
-  }, [initialConditionId, markets]);
+  }, [initialConditionId, markets, selectedMarket]);
 
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -111,31 +274,194 @@ export default function MarketSelector({
   // Focus search input when dropdown opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [isOpen]);
 
-  // Filter markets based on search query
-  const filteredMarkets = markets.filter(
-    (market) =>
-      market.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      market.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
-  // Handle market selection
-  const handleSelect = (market: Market) => {
+  // ---------------------------------------------------------------------------
+  // HANDLERS
+  // ---------------------------------------------------------------------------
+
+  const handleSelect = (market: CleanMarket) => {
     setSelectedMarket(market);
     onSelect(market.conditionId, market.question);
     setIsOpen(false);
     setSearchQuery('');
   };
 
-  // Toggle dropdown
   const toggleDropdown = () => {
     if (!disabled) {
       setIsOpen(!isOpen);
     }
   };
+
+  const handleRetry = () => {
+    fetchMarkets(debouncedSearch);
+  };
+
+  // ---------------------------------------------------------------------------
+  // RENDER HELPERS
+  // ---------------------------------------------------------------------------
+
+  const renderSelectedDisplay = () => {
+    if (!selectedMarket) {
+      return (
+        <span className="text-text-muted">Select a prediction market...</span>
+      );
+    }
+
+    return (
+      <div className="flex-1 min-w-0">
+        <p className="text-text-main text-sm font-medium truncate">
+          {selectedMarket.question}
+        </p>
+        <p className="text-text-muted text-xs truncate">
+          {formatOdds(selectedMarket.outcomePrices, selectedMarket.outcomes)}
+          {selectedMarket.endDate && ` • ${formatEndDate(selectedMarket.endDate)}`}
+        </p>
+      </div>
+    );
+  };
+
+  const renderMarketItem = (market: CleanMarket) => {
+    const isSelected = selectedMarket?.conditionId === market.conditionId;
+
+    return (
+      <button
+        key={market.conditionId}
+        type="button"
+        onClick={() => handleSelect(market)}
+        className={`
+          w-full px-4 py-3 text-left transition-colors duration-150
+          hover:bg-white/5 focus:bg-white/5 focus:outline-none
+          ${isSelected ? 'bg-secondary/10' : ''}
+        `}
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            {/* Question */}
+            <p className="text-text-main text-sm font-medium leading-tight">
+              {market.question}
+            </p>
+
+            {/* Metadata Row */}
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {/* Odds Badges */}
+              {market.outcomePrices.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {market.outcomes.slice(0, 4).map((outcome, index) => {
+                    const price = market.outcomePrices[index];
+                    if (price === undefined) return null;
+                    const percentage = Math.round(price * 100);
+
+                    return (
+                      <span
+                        key={outcome}
+                        className={`text-xs px-2 py-0.5 rounded-box font-medium ${getOutcomeColor(outcome, index)}`}
+                      >
+                        {outcome}: {percentage}%
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Event Title */}
+              {market.eventTitle && (
+                <span className="text-xs text-text-muted truncate max-w-[150px]">
+                  {market.eventTitle}
+                </span>
+              )}
+
+              {/* End Date */}
+              {market.endDate && (
+                <span className="text-xs text-text-muted whitespace-nowrap">
+                  • {formatEndDate(market.endDate)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Selected Check */}
+          {isSelected && (
+            <Check className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+          )}
+        </div>
+      </button>
+    );
+  };
+
+  const renderContent = () => {
+    // Error state
+    if (error) {
+      return (
+        <div className="flex flex-col items-center gap-3 py-8 px-4">
+          <AlertCircle className="w-8 h-8 text-red-400" />
+          <p className="text-red-400 text-sm text-center">{error}</p>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="flex items-center gap-2 text-sm text-secondary hover:text-secondary/80 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Try again
+          </button>
+        </div>
+      );
+    }
+
+    // Initial loading state
+    if (isLoading && !hasInitialLoad) {
+      return (
+        <div className="flex items-center justify-center py-8 gap-2">
+          <Loader2 className="w-6 h-6 text-secondary animate-spin" />
+          <span className="text-text-muted text-sm">Loading markets...</span>
+        </div>
+      );
+    }
+
+    // Empty state
+    if (markets.length === 0) {
+      return (
+        <div className="py-8 text-center px-4">
+          <p className="text-text-muted text-sm">
+            {searchQuery
+              ? `No markets found for "${searchQuery}"`
+              : 'No active markets available'}
+          </p>
+          <p className="text-text-muted/60 text-xs mt-1">
+            Try searching for topics like "Bitcoin", "Trump", or "AI"
+          </p>
+        </div>
+      );
+    }
+
+    // Markets list
+    return (
+      <div className="py-1">
+        {markets.map(renderMarketItem)}
+        
+        {/* Show loading indicator for search updates */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-2 border-t border-border">
+            <Loader2 className="w-4 h-4 text-secondary animate-spin" />
+            <span className="text-text-muted text-xs ml-2">Updating...</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ---------------------------------------------------------------------------
+  // MAIN RENDER
+  // ---------------------------------------------------------------------------
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
@@ -155,18 +481,7 @@ export default function MarketSelector({
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <TrendingUp className="w-5 h-5 text-secondary flex-shrink-0" />
-          {selectedMarket ? (
-            <div className="flex-1 min-w-0">
-              <p className="text-text-main text-sm font-medium truncate">
-                {selectedMarket.question}
-              </p>
-              <p className="text-text-muted text-xs truncate">
-                {selectedMarket.category} • {selectedMarket.volume}
-              </p>
-            </div>
-          ) : (
-            <span className="text-text-muted">Select a prediction market...</span>
-          )}
+          {renderSelectedDisplay()}
         </div>
         <ChevronDown
           className={`w-5 h-5 text-text-muted transition-transform duration-200 flex-shrink-0 ${
@@ -185,77 +500,36 @@ export default function MarketSelector({
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search markets..."
+                placeholder="Search markets (e.g., Trump, Bitcoin, AI)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-field pl-10 py-2 text-sm"
+                className="input-field pl-10 pr-10 py-2 text-sm w-full"
               />
+              {isLoading && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary animate-spin" />
+              )}
             </div>
           </div>
 
           {/* Markets List */}
-          <div className="max-h-64 overflow-y-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 text-secondary animate-spin" />
-              </div>
-            ) : filteredMarkets.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="text-text-muted text-sm">No markets found</p>
-              </div>
-            ) : (
-              <div className="py-1">
-                {filteredMarkets.map((market) => (
-                  <button
-                    key={market.conditionId}
-                    type="button"
-                    onClick={() => handleSelect(market)}
-                    className={`
-                      w-full px-4 py-3 text-left transition-colors duration-150
-                      hover:bg-white/5 focus:bg-white/5 focus:outline-none
-                      ${selectedMarket?.conditionId === market.conditionId ? 'bg-secondary/10' : ''}
-                    `}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-text-main text-sm font-medium leading-tight">
-                          {market.question}
-                        </p>
-                        <div className="flex items-center gap-3 mt-1.5">
-                          <span className="text-xs text-secondary bg-secondary/10 px-2 py-0.5 rounded-box">
-                            {market.category}
-                          </span>
-                          <span className="text-xs text-text-muted">
-                            Vol: {market.volume}
-                          </span>
-                          {market.probability !== undefined && (
-                            <span className="text-xs text-text-muted">
-                              {market.probability}% Yes
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {selectedMarket?.conditionId === market.conditionId && (
-                        <Check className="w-5 h-5 text-secondary flex-shrink-0" />
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <div className="max-h-80 overflow-y-auto">{renderContent()}</div>
 
           {/* Footer */}
           <div className="p-3 border-t border-border bg-background/50">
-            <a
-              href="https://polymarket.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 text-xs text-text-muted hover:text-secondary transition-colors"
-            >
-              <span>Browse all markets on Polymarket</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-text-muted">
+                {markets.length} market{markets.length !== 1 ? 's' : ''} found
+              </span>
+              <a
+                href="https://polymarket.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-text-muted hover:text-secondary transition-colors"
+              >
+                <span>View all on Polymarket</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
         </div>
       )}

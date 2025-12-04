@@ -3,6 +3,8 @@
 import { use } from 'react';
 import { useCampaign } from '@/hooks/useCampaign';
 import { FundForm } from '@/components/forms/FundForm';
+import ResolutionActions from '@/components/campaign/ResolutionActions';
+import { OracleController } from '@/components/debug/OracleController';
 
 interface CampaignPageProps {
   params: Promise<{
@@ -69,6 +71,9 @@ export default function CampaignPage({ params }: CampaignPageProps) {
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  // Determine if funding is allowed
+  const canFund = !campaign.resolved && !isExpired;
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -187,28 +192,32 @@ export default function CampaignPage({ params }: CampaignPageProps) {
             </div>
           </div>
 
-          {/* Right Column - Fund Form */}
+          {/* Right Column - Actions & Stats */}
           <div className="lg:col-span-1">
             <div className="sticky top-8 space-y-6">
+              {/* Resolution Actions - Handles its own visibility internally */}
+              <ResolutionActions campaignAddress={address} />
+
+              {/* Fund Form - Only show if campaign is active */}
               <div className="glass-panel">
                 <h2 className="text-xl font-semibold text-white mb-4">
                   Fund this Campaign
                 </h2>
 
-                {campaign.resolved ? (
+                {canFund ? (
+                  <FundForm campaignAddress={address} />
+                ) : campaign.resolved ? (
                   <div className="text-center py-4">
                     <p className="text-gray-400">
                       This campaign has been resolved and is no longer accepting funds.
                     </p>
                   </div>
-                ) : isExpired ? (
+                ) : (
                   <div className="text-center py-4">
                     <p className="text-gray-400">
                       This campaign has ended and is awaiting resolution.
                     </p>
                   </div>
-                ) : (
-                  <FundForm campaignAddress={address} />
                 )}
               </div>
 
@@ -260,6 +269,14 @@ export default function CampaignPage({ params }: CampaignPageProps) {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Debug Section - Oracle Controller */}
+        <div className="mt-12">
+          <OracleController
+            conditionId={campaign.conditionId}
+            campaignAddress={address}
+          />
         </div>
       </div>
     </div>

@@ -20,10 +20,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className={inter.className}>
         <Web3Provider>
           <Header />
-          <main className="pt-16 min-h-screen bg-gray-50">
+          <main className="min-h-screen flex flex-col antialiased pt-16">
             {children}
           </main>
         </Web3Provider>

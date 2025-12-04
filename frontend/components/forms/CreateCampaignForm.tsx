@@ -52,7 +52,7 @@ const createCampaignSchema = z.object({
     .max(2000, 'Description must be less than 2000 characters'),
   
   goalAmount: z
-    .number({ message: 'Goal amount is required' }) // Changed from required_error
+    .number({ message: 'Goal amount is required' })
     .positive('Goal must be greater than 0')
     .min(1, 'Minimum goal is 1 USDC')
     .max(10000000, 'Maximum goal is 10,000,000 USDC'),
@@ -63,7 +63,7 @@ const createCampaignSchema = z.object({
     .refine((val) => isAddress(val), 'Please enter a valid Ethereum address'),
   
   deadline: z
-    .date({ message: 'Deadline is required' }) // Changed from required_error
+    .date({ message: 'Deadline is required' })
     .refine(
       (date) => date > new Date(),
       'Deadline must be in the future'
@@ -100,20 +100,20 @@ interface FormFieldProps {
 function FormField({ label, error, required, icon, hint, children }: FormFieldProps) {
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-        {icon && <span className="text-gray-400">{icon}</span>}
+      <label className="flex items-center gap-2 text-sm font-medium text-text-main">
+        {icon && <span className="text-secondary">{icon}</span>}
         {label}
-        {required && <span className="text-red-500">*</span>}
+        {required && <span className="text-primary">*</span>}
       </label>
       {children}
       {hint && !error && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+        <p className="text-xs text-text-muted flex items-center gap-1">
           <Info className="w-3 h-3" />
           {hint}
         </p>
       )}
       {error && (
-        <p className="text-xs text-red-500 flex items-center gap-1">
+        <p className="text-xs text-primary flex items-center gap-1">
           <AlertCircle className="w-3 h-3" />
           {error}
         </p>
@@ -132,39 +132,39 @@ function SuccessCard({ campaignAddress, transactionHash, onCreateAnother }: Succ
   const router = useRouter();
 
   return (
-    <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200 dark:border-green-800 p-8 text-center animate-in fade-in-0 zoom-in-95 duration-300">
+    <div className="glass-panel p-8 text-center animate-in fade-in-0 zoom-in-95 duration-300">
       {/* Success Icon */}
       <div className="relative mx-auto w-20 h-20 mb-6">
-        <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
-        <div className="relative w-20 h-20 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center">
-          <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+        <div className="absolute inset-0 bg-secondary/20 rounded-full animate-ping" />
+        <div className="relative w-20 h-20 bg-secondary/10 rounded-full flex items-center justify-center border border-secondary/30">
+          <CheckCircle className="w-10 h-10 text-secondary" />
         </div>
       </div>
 
       {/* Title */}
-      <h2 className="text-2xl font-bold text-green-800 dark:text-green-200 mb-2">
+      <h2 className="text-2xl font-bold text-text-main mb-2">
         Campaign Created Successfully! 🎉
       </h2>
-      <p className="text-green-600 dark:text-green-400 mb-8">
+      <p className="text-secondary mb-8">
         Your prediction-gated crowdfunding campaign is now live on Base Sepolia.
       </p>
 
       {/* Details Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-8 text-left shadow-sm">
+      <div className="bg-background rounded-box p-6 mb-8 text-left border border-border">
         <div className="space-y-4">
           <div>
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <span className="text-xs font-medium text-text-muted uppercase tracking-wide">
               Campaign Address
             </span>
-            <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all mt-1 bg-gray-50 dark:bg-gray-900 p-2 rounded-lg">
+            <p className="font-mono text-sm text-text-main break-all mt-1 bg-surface p-2 rounded-box border border-border">
               {campaignAddress}
             </p>
           </div>
           <div>
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <span className="text-xs font-medium text-text-muted uppercase tracking-wide">
               Transaction Hash
             </span>
-            <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all mt-1 bg-gray-50 dark:bg-gray-900 p-2 rounded-lg">
+            <p className="font-mono text-sm text-text-main break-all mt-1 bg-surface p-2 rounded-box border border-border">
               {transactionHash}
             </p>
           </div>
@@ -177,14 +177,14 @@ function SuccessCard({ campaignAddress, transactionHash, onCreateAnother }: Succ
           href={`https://sepolia.basescan.org/tx/${transactionHash}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface text-text-main rounded-box border border-border hover:bg-white/5 transition-colors font-medium"
         >
           View on Explorer
           <ExternalLink className="w-4 h-4" />
         </a>
         <button
           onClick={() => router.push(`/campaigns/${campaignAddress}`)}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-medium"
+          className="btn-primary"
         >
           View Campaign
           <ArrowRight className="w-4 h-4" />
@@ -194,7 +194,7 @@ function SuccessCard({ campaignAddress, transactionHash, onCreateAnother }: Succ
       {/* Create Another */}
       <button
         onClick={onCreateAnother}
-        className="mt-6 inline-flex items-center gap-2 text-sm text-green-600 dark:text-green-400 hover:underline"
+        className="mt-6 inline-flex items-center gap-2 text-sm text-secondary hover:text-secondary/80 transition-colors"
       >
         <RefreshCw className="w-4 h-4" />
         Create Another Campaign
@@ -221,10 +221,8 @@ export default function CreateCampaignForm({
   const router = useRouter();
   const { address, isConnected } = useAccount();
   
-  // Local state for market selection (needed for controlled component)
   const [selectedMarketQuestion, setSelectedMarketQuestion] = useState('');
 
-  // Initialize form with react-hook-form
   const {
     register,
     handleSubmit,
@@ -247,12 +245,10 @@ export default function CreateCampaignForm({
     },
   });
 
-  // Watch form values
   const watchedConditionId = watch('conditionId');
   const watchedGoalAmount = watch('goalAmount');
   const watchedDeadline = watch('deadline');
 
-  // Create campaign hook
   const {
     createCampaign,
     isPending,
@@ -266,23 +262,19 @@ export default function CreateCampaignForm({
     isCorrectChain,
   } = useCreateCampaign();
 
-  // Convert conditionId to bytes32 format
   const conditionIdBytes32 = useConditionIdAsBytes32(watchedConditionId || '');
 
-  // Set default recipient to connected wallet
   useEffect(() => {
     if (address && !watch('recipient')) {
       setValue('recipient', address, { shouldValidate: true });
     }
   }, [address, setValue, watch]);
 
-  // Handle success
   useEffect(() => {
     if (isSuccess && createdCampaignAddress) {
       onSuccess?.(createdCampaignAddress);
       
       if (redirectOnSuccess) {
-        // Small delay to show success state
         setTimeout(() => {
           router.push(`/campaigns/${createdCampaignAddress}`);
         }, 3000);
@@ -290,7 +282,6 @@ export default function CreateCampaignForm({
     }
   }, [isSuccess, createdCampaignAddress, onSuccess, redirectOnSuccess, router]);
 
-  // Handle market selection from MarketSelector
   const handleMarketSelect = useCallback(
     (conditionId: string, question: string) => {
       setValue('conditionId', conditionId, { shouldValidate: true });
@@ -300,13 +291,11 @@ export default function CreateCampaignForm({
     [setValue]
   );
 
-  // Form submission handler
   const onSubmit = (data: CreateCampaignFormData) => {
     if (!isConnected) {
       return;
     }
 
-    // Convert deadline to Unix timestamp (bigint)
     const deadlineTimestamp = BigInt(Math.floor(data.deadline.getTime() / 1000));
 
     createCampaign({
@@ -319,22 +308,18 @@ export default function CreateCampaignForm({
     });
   };
 
-  // Reset form and transaction state
   const handleReset = () => {
     reset();
     resetTx();
     setSelectedMarketQuestion('');
   };
 
-  // Calculate minimum date (1 hour from now)
   const minDate = new Date(Date.now() + 60 * 60 * 1000);
   const minDateString = minDate.toISOString().slice(0, 16);
 
-  // Calculate max date (1 year from now)
   const maxDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   const maxDateString = maxDate.toISOString().slice(0, 16);
 
-  // Show success card if transaction succeeded
   if (isSuccess && createdCampaignAddress && hash) {
     return (
       <div className={className}>
@@ -350,16 +335,16 @@ export default function CreateCampaignForm({
   return (
     <div className={className}>
       {/* Form Card */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div className="glass-panel overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-8 sm:px-8">
+        <div className="bg-gradient-to-r from-primary/20 to-secondary/20 px-6 py-8 sm:px-8 border-b border-border">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-              <Rocket className="w-8 h-8 text-white" />
+            <div className="p-3 bg-primary/10 rounded-box border border-primary/20">
+              <Rocket className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Create Campaign</h1>
-              <p className="text-indigo-100 mt-1">
+              <h1 className="text-2xl font-bold text-text-main">Create Campaign</h1>
+              <p className="text-text-muted mt-1">
                 Launch a prediction-gated crowdfunding campaign
               </p>
             </div>
@@ -370,13 +355,13 @@ export default function CreateCampaignForm({
         <div className="px-6 sm:px-8 pt-6 space-y-4">
           {/* Not Connected Warning */}
           {!isConnected && (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl flex items-start gap-3">
-              <Wallet className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+            <div className="p-4 bg-primary/10 border border-primary/30 rounded-box flex items-start gap-3">
+              <Wallet className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                <p className="font-medium text-text-main">
                   Wallet Not Connected
                 </p>
-                <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                <p className="text-sm text-text-muted">
                   Please connect your wallet to create a campaign.
                 </p>
               </div>
@@ -385,13 +370,13 @@ export default function CreateCampaignForm({
 
           {/* Wrong Network Warning */}
           {isConnected && !isCorrectChain && (
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+            <div className="p-4 bg-primary/10 border border-primary/30 rounded-box flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-orange-800 dark:text-orange-200">
+                <p className="font-medium text-text-main">
                   Wrong Network
                 </p>
-                <p className="text-sm text-orange-600 dark:text-orange-400">
+                <p className="text-sm text-text-muted">
                   Please switch to Base Sepolia (Chain ID: {BASE_SEPOLIA_CHAIN_ID}) to create a campaign.
                 </p>
               </div>
@@ -400,13 +385,13 @@ export default function CreateCampaignForm({
 
           {/* Transaction Error */}
           {txError && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="p-4 bg-primary/10 border border-primary/30 rounded-box flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-red-800 dark:text-red-200">
+                <p className="font-medium text-text-main">
                   Transaction Failed
                 </p>
-                <p className="text-sm text-red-600 dark:text-red-400 break-words">
+                <p className="text-sm text-text-muted break-words">
                   {txError.message.includes('User rejected')
                     ? 'You rejected the transaction in your wallet.'
                     : txError.message.slice(0, 200)}
@@ -431,18 +416,7 @@ export default function CreateCampaignForm({
               type="text"
               placeholder="e.g., Fund Climate Research if Paris Agreement Goals Met"
               disabled={isPending}
-              className={`
-                w-full px-4 py-3 rounded-xl border-2 transition-all duration-200
-                bg-gray-50 dark:bg-gray-800
-                text-gray-900 dark:text-gray-100
-                placeholder-gray-400 dark:placeholder-gray-500
-                disabled:opacity-50 disabled:cursor-not-allowed
-                ${errors.title
-                  ? 'border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500/20'
-                  : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500/20'
-                }
-                focus:outline-none focus:ring-4
-              `}
+              className="input-field disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </FormField>
 
@@ -459,20 +433,9 @@ export default function CreateCampaignForm({
               rows={4}
               placeholder="Describe your campaign goals, how the funds will be used, and what prediction market outcome triggers the release of funds..."
               disabled={isPending}
-              className={`
-                w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 resize-none
-                bg-gray-50 dark:bg-gray-800
-                text-gray-900 dark:text-gray-100
-                placeholder-gray-400 dark:placeholder-gray-500
-                disabled:opacity-50 disabled:cursor-not-allowed
-                ${errors.description
-                  ? 'border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500/20'
-                  : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500/20'
-                }
-                focus:outline-none focus:ring-4
-              `}
+              className="input-field resize-none disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
+            <div className="flex justify-between text-xs text-text-muted mt-1">
               <span>{watch('description')?.length || 0} / 2000 characters</span>
             </div>
           </FormField>
@@ -493,7 +456,7 @@ export default function CreateCampaignForm({
                   onSelect={handleMarketSelect}
                   disabled={isPending}
                   initialConditionId={field.value}
-                  className={errors.conditionId ? '[&>button]:border-red-300 dark:[&>button]:border-red-700' : ''}
+                  className={errors.conditionId ? 'ring-1 ring-primary' : ''}
                 />
               )}
             />
@@ -501,17 +464,17 @@ export default function CreateCampaignForm({
 
           {/* Selected Market Preview */}
           {selectedMarketQuestion && (
-            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+            <div className="p-4 bg-secondary/10 rounded-box border border-secondary/30 animate-in fade-in-0 slide-in-from-top-2 duration-200">
               <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+                <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+                  <p className="text-sm font-medium text-text-main">
                     Selected Market
                   </p>
-                  <p className="text-sm text-indigo-700 dark:text-indigo-300 mt-1">
+                  <p className="text-sm text-secondary mt-1">
                     {selectedMarketQuestion}
                   </p>
-                  <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-2 font-mono truncate">
+                  <p className="text-xs text-text-muted mt-2 font-mono truncate">
                     ID: {watchedConditionId?.slice(0, 30)}...
                   </p>
                 </div>
@@ -530,7 +493,7 @@ export default function CreateCampaignForm({
               hint="Amount in USDC"
             >
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-medium">
                   $
                 </span>
                 <input
@@ -540,25 +503,14 @@ export default function CreateCampaignForm({
                   min="1"
                   step="0.01"
                   disabled={isPending}
-                  className={`
-                    w-full pl-8 pr-20 py-3 rounded-xl border-2 transition-all duration-200
-                    bg-gray-50 dark:bg-gray-800
-                    text-gray-900 dark:text-gray-100
-                    placeholder-gray-400 dark:placeholder-gray-500
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                    ${errors.goalAmount
-                      ? 'border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500/20'
-                      : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500/20'
-                    }
-                    focus:outline-none focus:ring-4
-                  `}
+                  className="input-field pl-8 pr-20 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-box">
                   USDC
                 </span>
               </div>
               {watchedGoalAmount && watchedGoalAmount > 0 && (
-                <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                <p className="text-xs text-secondary mt-1">
                   ≈ ${watchedGoalAmount.toLocaleString()} USDC
                 </p>
               )}
@@ -590,22 +542,12 @@ export default function CreateCampaignForm({
                         field.onChange(undefined);
                       }
                     }}
-                    className={`
-                      w-full px-4 py-3 rounded-xl border-2 transition-all duration-200
-                      bg-gray-50 dark:bg-gray-800
-                      text-gray-900 dark:text-gray-100
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                      ${errors.deadline
-                        ? 'border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500/20'
-                        : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500/20'
-                      }
-                      focus:outline-none focus:ring-4
-                    `}
+                    className="input-field disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 )}
               />
               {watchedDeadline && (
-                <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                <p className="text-xs text-secondary mt-1">
                   {Math.ceil((watchedDeadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days from now
                 </p>
               )}
@@ -626,25 +568,14 @@ export default function CreateCampaignForm({
                 type="text"
                 placeholder="0x..."
                 disabled={isPending}
-                className={`
-                  w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 font-mono text-sm
-                  bg-gray-50 dark:bg-gray-800
-                  text-gray-900 dark:text-gray-100
-                  placeholder-gray-400 dark:placeholder-gray-500
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  ${errors.recipient
-                    ? 'border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500/20'
-                    : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500/20'
-                  }
-                  focus:outline-none focus:ring-4
-                `}
+                className="input-field font-mono text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               />
               {address && watch('recipient') !== address && (
                 <button
                   type="button"
                   onClick={() => setValue('recipient', address, { shouldValidate: true })}
                   disabled={isPending}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors disabled:opacity-50"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-3 py-1.5 bg-secondary/10 text-secondary rounded-box hover:bg-secondary/20 transition-colors disabled:opacity-50 border border-secondary/30"
                 >
                   Use My Wallet
                 </button>
@@ -654,27 +585,27 @@ export default function CreateCampaignForm({
 
           {/* Summary Card */}
           {isValid && watchedGoalAmount && watchedConditionId && (
-            <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
+            <div className="p-6 bg-surface rounded-box border border-border animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+              <h3 className="text-sm font-semibold text-text-main mb-4 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-secondary" />
                 Campaign Summary
               </h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">Goal</p>
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">
-                    ${watchedGoalAmount.toLocaleString()} USDC
+                  <p className="text-text-muted">Goal</p>
+                  <p className="font-semibold text-text-main">
+                    ${watchedGoalAmount.toLocaleString()} <span className="text-secondary">USDC</span>
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">Deadline</p>
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">
+                  <p className="text-text-muted">Deadline</p>
+                  <p className="font-semibold text-text-main">
                     {watchedDeadline?.toLocaleDateString() || 'Not set'}
                   </p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-gray-500 dark:text-gray-400">Condition</p>
-                  <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  <p className="text-text-muted">Condition</p>
+                  <p className="font-semibold text-text-main truncate">
                     {selectedMarketQuestion || 'Selected'}
                   </p>
                 </div>
@@ -688,13 +619,12 @@ export default function CreateCampaignForm({
               type="submit"
               disabled={isPending || !isConnected || !isCorrectChain || !isValid}
               className={`
-                w-full py-4 px-6 rounded-xl font-semibold text-white
+                w-full py-4 px-6 rounded-box font-bold
                 flex items-center justify-center gap-3
                 transition-all duration-200
-                focus:outline-none focus:ring-4 focus:ring-indigo-500/20
                 ${isPending || !isConnected || !isCorrectChain || !isValid
-                  ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0'
+                  ? 'bg-border text-text-muted cursor-not-allowed'
+                  : 'btn-primary'
                 }
               `}
             >
@@ -716,9 +646,8 @@ export default function CreateCampaignForm({
               )}
             </button>
 
-            {/* Form validation status */}
             {!isValid && isDirty && (
-              <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-3">
+              <p className="text-center text-sm text-text-muted mt-3">
                 Please fill in all required fields correctly
               </p>
             )}
@@ -726,14 +655,14 @@ export default function CreateCampaignForm({
 
           {/* Transaction Hash Display */}
           {hash && !isSuccess && (
-            <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
+            <div className="text-center p-4 bg-secondary/10 rounded-box border border-secondary/30">
+              <p className="text-sm text-secondary">
                 Transaction submitted!{' '}
                 <a
                   href={`https://sepolia.basescan.org/tx/${hash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 font-mono underline hover:no-underline"
+                  className="inline-flex items-center gap-1 font-mono underline hover:no-underline text-text-main"
                 >
                   {hash.slice(0, 10)}...{hash.slice(-8)}
                   <ExternalLink className="w-3 h-3" />
@@ -745,11 +674,11 @@ export default function CreateCampaignForm({
 
         {/* Footer */}
         <div className="px-6 sm:px-8 pb-6">
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              <strong className="text-gray-700 dark:text-gray-300">How it works:</strong> Your campaign
+          <div className="p-4 bg-background rounded-box border border-border">
+            <p className="text-xs text-text-muted leading-relaxed">
+              <strong className="text-text-main">How it works:</strong> Your campaign
               will accept contributions until the deadline. If the selected prediction market resolves
-              to "Yes" and the funding goal is met, funds are released to the recipient. Otherwise,
+              to &ldquo;Yes&rdquo; and the funding goal is met, funds are released to the recipient. Otherwise,
               contributors can claim refunds.
             </p>
           </div>

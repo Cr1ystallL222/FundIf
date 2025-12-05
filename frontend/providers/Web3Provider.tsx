@@ -9,6 +9,7 @@ import { baseSepolia } from 'wagmi/chains';
 import { config } from '@/lib/wagmi/config';
 
 import '@coinbase/onchainkit/styles.css';
+import './onchainkit-overrides.css';
 
 interface Web3ProviderProps {
   children: ReactNode;
@@ -37,7 +38,7 @@ export function Web3Provider({ children, initialState }: Web3ProviderProps) {
           config={{
             appearance: {
               name: 'FundIf',
-              logo: undefined, // Add your logo URL here if you have one
+              logo: undefined,
               mode: 'light',
               theme: 'base',
             },

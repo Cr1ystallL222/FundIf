@@ -76,26 +76,28 @@ const Icons = {
    ANIMATION ORCHESTRATION
    Smooth, spring-based physics for Linear-like feel.
    ========================================== */
-const anim = {
-  container: {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.1,
-      },
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
     },
   },
-  item: {
-    hidden: { opacity: 0, y: 20, scale: 0.98 },
-    show: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { type: 'spring', stiffness: 50, damping: 20 },
-    },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring', stiffness: 50, damping: 20 },
   },
+};
+
+const hoverTapVariants: Variants = {
   hover: {
     scale: 1.02,
     transition: { duration: 0.2, ease: 'easeOut' },
@@ -154,7 +156,7 @@ const AddressPill = ({ label, address }: { label: string; address: string }) => 
         onClick={handleCopy}
         whileHover="hover"
         whileTap="tap"
-        variants={anim}
+        variants={hoverTapVariants}
         className="group flex items-center gap-3 px-3 py-2 rounded-lg bg-zinc-900/50 border border-white/5 hover:border-white/10 transition-colors w-full sm:w-auto"
       >
         <div className="p-1.5 rounded-md bg-zinc-800 text-zinc-400 group-hover:text-white transition-colors">
@@ -230,7 +232,7 @@ const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void
         onClick={onRetry}
         whileHover="hover"
         whileTap="tap"
-        variants={anim}
+        variants={hoverTapVariants}
         className="btn-secondary w-full justify-center"
       >
         <Icons.Refresh className="mr-2" /> Retry Connection
@@ -260,11 +262,11 @@ export default function CampaignPage({ params }: CampaignPageProps) {
   const canFund = campaign && !campaign.resolved && !isExpired;
 
   // --- Animation: Progress Bar Width ---
-  const progressVariant = {
+  const progressVariant: Variants = {
     initial: { width: 0 },
     animate: { 
       width: `${progressPercentage}%`,
-      transition: { duration: 1.5, ease: [0.22, 1, 0.36, 1] } // Custom easing
+      transition: { duration: 1.5, ease: [0.22, 1, 0.36, 1] }
     }
   };
 
@@ -283,10 +285,10 @@ export default function CampaignPage({ params }: CampaignPageProps) {
   });
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 bg-[#09090b]">
+    <div className="min-h-screen py-12 px-4 sm:px-6 bg-surface">
       <motion.div 
         className="max-w-7xl mx-auto"
-        variants={anim.container}
+        variants={containerVariants}
         initial="hidden"
         animate="show"
       >
@@ -296,7 +298,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
           <div className="lg:col-span-8 space-y-6">
             
             {/* 1. Header Card */}
-            <motion.div variants={anim.item} className="glass-panel p-8 relative overflow-hidden group">
+            <motion.div variants={itemVariants} className="glass-panel p-8 relative overflow-hidden group">
               {/* Ambient Background Glow */}
               <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
 
@@ -330,7 +332,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
             </motion.div>
 
             {/* 2. Description Card */}
-            <motion.div variants={anim.item} className="glass-panel p-8">
+            <motion.div variants={itemVariants} className="glass-panel p-8">
               <div className="flex items-center gap-2 mb-6 pb-4 border-b border-white/5">
                 <Icons.Activity className="text-blue-500" />
                 <h2 className="text-lg font-semibold text-white">Campaign Brief</h2>
@@ -341,7 +343,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
             </motion.div>
 
             {/* 3. Progress & Stats Card */}
-            <motion.div variants={anim.item} className="glass-panel p-8">
+            <motion.div variants={itemVariants} className="glass-panel p-8">
               <div className="flex items-center justify-between mb-6">
                  <div className="flex items-center gap-2">
                     <Icons.Target className="text-blue-500" />
@@ -356,7 +358,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
               {/* Cyber Progress Bar */}
               <div className="relative h-6 w-full bg-zinc-900/50 rounded-full border border-white/5 overflow-hidden mb-2">
                 <motion.div 
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-blue-400"
+                  className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-600 to-blue-400"
                   variants={progressVariant}
                   initial="initial"
                   animate="animate"
@@ -374,7 +376,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
             </motion.div>
 
             {/* 4. Oracle Condition Technical Data */}
-            <motion.div variants={anim.item} className="glass-panel-subtle p-6">
+            <motion.div variants={itemVariants} className="glass-panel-subtle p-6">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
                 <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Oracle Configuration</h3>
@@ -400,7 +402,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
             <div className="sticky top-6 space-y-6">
               
               {/* 1. Action Module */}
-              <motion.div variants={anim.item} className="glass-panel p-1 overflow-hidden">
+              <motion.div variants={itemVariants} className="glass-panel p-1 overflow-hidden">
                  <div className="p-6 bg-zinc-900/50 rounded-[calc(var(--radius-xl)-4px)]">
                     <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
                       <div className="w-1 h-5 bg-blue-500 rounded-full" />
@@ -424,7 +426,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
               </motion.div>
 
               {/* 2. Status Module */}
-              <motion.div variants={anim.item} className="glass-panel p-6">
+              <motion.div variants={itemVariants} className="glass-panel p-6">
                 <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4 border-b border-white/5 pb-2">
                   Timeline & Status
                 </h3>
@@ -458,7 +460,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
               </motion.div>
 
               {/* 3. Debug Controller */}
-              <motion.div variants={anim.item} className="opacity-50 hover:opacity-100 transition-opacity">
+              <motion.div variants={itemVariants} className="opacity-50 hover:opacity-100 transition-opacity">
                  <OracleController conditionId={campaign.conditionId} campaignAddress={address} />
               </motion.div>
 

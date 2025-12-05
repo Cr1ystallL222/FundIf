@@ -76,7 +76,7 @@ const campaignSchema = z.object({
   description: z.string()
     .min(20, 'Tell us more about the campaign (min 20 chars)')
     .max(1000, 'Description is too long'),
-  goalAmount: z.number({ invalid_type_error: 'Must be a number' })
+  goalAmount: z.number({ message: 'Must be a number' })
     .min(10, 'Minimum goal is 10 USDC')
     .max(1000000, 'Maximum goal is 1,000,000 USDC'),
   recipient: z.string()
@@ -140,6 +140,7 @@ interface Market {
   question: string;
   slug: string;
   outcomePrices: number[];
+  eventTitle?: string;  // Add this line
 }
 
 const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => void; disabled: boolean; error?: string }) => {
@@ -186,7 +187,7 @@ const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => 
   return (
     <div className="relative z-50" ref={wrapperRef}>
       <div className={cn(
-        "relative flex items-center w-full h-12 px-4 rounded-lg border bg-[#0c0c0e] transition-all duration-200",
+        "relative flex items-center w-full h-12 px-4 rounded-lg border bg-elevated transition-all duration-200",
         error ? "border-red-500/50 focus-within:border-red-500" : "border-white/10 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20",
         disabled && "opacity-50 cursor-not-allowed"
       )}>
@@ -317,11 +318,11 @@ export default function CreateCampaignPage() {
   // ===========================================================================
   if (isSuccess && createdCampaignAddress) {
     return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-surface flex items-center justify-center p-6">
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="max-w-md w-full bg-[#09090b] border border-white/10 rounded-2xl p-8 relative overflow-hidden"
+          className="max-w-md w-full bg-surface border border-white/10 rounded-2xl p-8 relative overflow-hidden"
         >
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-green-500/10 blur-3xl -z-10" />
           <div className="flex flex-col items-center text-center">
@@ -390,8 +391,8 @@ export default function CreateCampaignPage() {
   // MAIN FORM
   // ===========================================================================
   return (
-    <div className="min-h-screen bg-[#09090b] text-white selection:bg-blue-500/30 selection:text-blue-200 pb-20">
-      <div className="fixed top-0 left-0 right-0 h-96 bg-gradient-to-b from-blue-900/10 via-[#09090b]/50 to-[#09090b] pointer-events-none z-0" />
+    <div className="min-h-screen bg-surface text-white selection:bg-blue-500/30 selection:text-blue-200 pb-20">
+      <div className="fixed top-0 left-0 right-0 h-96 bg-linear-to-b from-blue-900/10 via-surface/50 to-surface pointer-events-none z-0" />
       
       <main className="relative z-10 max-w-7xl mx-auto px-6 pt-12 lg:pt-20">
         
@@ -450,7 +451,7 @@ export default function CreateCampaignPage() {
                     disabled={isPending}
                     placeholder="e.g. Mainnet Launch Fund"
                     className={cn(
-                      "w-full bg-[#0c0c0e] border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
+                      "w-full bg-elevated border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
                       errors.title ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
                     )}
                   />
@@ -465,7 +466,7 @@ export default function CreateCampaignPage() {
                     rows={5}
                     placeholder="Explain why you need funds and how the prediction market event aligns with your goals..."
                     className={cn(
-                      "w-full bg-[#0c0c0e] border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600 resize-none",
+                      "w-full bg-elevated border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600 resize-none",
                       errors.description ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
                     )}
                   />
@@ -545,7 +546,7 @@ export default function CreateCampaignPage() {
                         disabled={isPending}
                         placeholder="10000"
                         className={cn(
-                          "w-full bg-[#0c0c0e] border rounded-lg pl-4 pr-16 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
+                          "w-full bg-elevated border rounded-lg pl-4 pr-16 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
                           errors.goalAmount ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
                         )}
                       />
@@ -565,7 +566,7 @@ export default function CreateCampaignPage() {
                         {...register('deadline')}
                         disabled={isPending}
                         className={cn(
-                          "w-full bg-[#0c0c0e] border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600 [color-scheme:dark]",
+                          "w-full bg-elevated border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600 scheme-dark",
                           errors.deadline ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
                         )}
                       />
@@ -597,7 +598,7 @@ export default function CreateCampaignPage() {
                       disabled={isPending}
                       placeholder="0x... or name.base.eth"
                       className={cn(
-                        "w-full bg-[#0c0c0e] border rounded-lg pl-10 pr-24 py-3 text-sm font-mono text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
+                        "w-full bg-elevated border rounded-lg pl-10 pr-24 py-3 text-sm font-mono text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
                         errors.recipient ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
                       )}
                     />
@@ -704,7 +705,7 @@ export default function CreateCampaignPage() {
                 layout
               >
                 {/* Card Header Image Placeholder */}
-                <div className="h-32 bg-gradient-to-br from-zinc-800 to-[#0c0c0e] relative p-6 flex flex-col justify-end border-b border-white/5">
+                <div className="h-32 bg-linear-to-br from-zinc-800 to-elevated relative p-6 flex flex-col justify-end border-b border-white/5">
                   <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
                   <div className="relative z-10">
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 border border-white/10 text-[10px] text-white backdrop-blur-md">
@@ -718,14 +719,14 @@ export default function CreateCampaignPage() {
                   {/* Title & Description */}
                   <div>
                     {watchedValues.title ? (
-                      <h2 className="text-xl font-bold text-white leading-tight break-words">{watchedValues.title}</h2>
+                      <h2 className="text-xl font-bold text-white leading-tight wrap-break-word">{watchedValues.title}</h2>
                     ) : (
                       <div className="h-7 w-3/4 bg-zinc-800 rounded animate-pulse" />
                     )}
                     
                     <div className="mt-3">
                       {watchedValues.description ? (
-                        <p className="text-sm text-zinc-400 line-clamp-3 break-words">{watchedValues.description}</p>
+                        <p className="text-sm text-zinc-400 line-clamp-3 wrap-break-word">{watchedValues.description}</p>
                       ) : (
                         <div className="space-y-2 mt-3">
                           <div className="h-3 w-full bg-zinc-900 rounded animate-pulse" />
@@ -736,7 +737,7 @@ export default function CreateCampaignPage() {
                   </div>
 
                   {/* The "IF" Logic Block */}
-                  <div className="bg-[#09090b] border border-white/5 rounded-lg p-4 relative overflow-hidden group">
+                  <div className="bg-surface border border-white/5 rounded-lg p-4 relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
                     <div className="flex items-center gap-2 mb-2">
                       <Icons.Polymarket className="w-4 h-4 text-zinc-500" />
@@ -777,7 +778,7 @@ export default function CreateCampaignPage() {
                     <div className="text-right">
                       <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Recipient</p>
                       <div className="flex items-center justify-end gap-1">
-                         <p className="text-xs text-white font-mono truncate max-w-[80px]">
+                         <p className="text-xs text-white font-mono truncate max-w-20">
                           {watchedValues.recipient || '0x...'}
                         </p>
                         {watchedValues.recipient && <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />}

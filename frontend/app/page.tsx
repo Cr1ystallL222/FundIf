@@ -69,14 +69,12 @@ const Reveal = ({ children, delay = 0, className = "" }: { children: ReactNode, 
   );
 };
 
-const variants: Variants = {
-  lineDraw: {
-    hidden: { pathLength: 0, opacity: 0 },
-    visible: { 
-      pathLength: 1, 
-      opacity: 1, 
-      transition: { duration: 1.5, ease: "easeInOut" as const } 
-    }
+const lineDrawVariants: Variants = {
+  hidden: { pathLength: 0, opacity: 0 },
+  visible: { 
+    pathLength: 1, 
+    opacity: 1, 
+    transition: { duration: 1.5, ease: "easeInOut" as const } 
   }
 };
 
@@ -113,7 +111,7 @@ const TooltipProvider = ({ children }: { children: ReactNode }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 2 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[9999] pointer-events-none px-3 py-2 rounded-md border border-lime-400/30 bg-[#111113] shadow-[0_0_30px_-10px_rgba(163,230,53,0.2)]"
+            className="fixed z-9999 pointer-events-none px-3 py-2 rounded-md border border-lime-400/30 bg-[#111113] shadow-[0_0_30px_-10px_rgba(163,230,53,0.2)]"
             style={{ left: state.x, top: state.y - 16, transform: 'translate(-50%, -100%)' }}
           >
             <div className="text-[11px] font-mono text-lime-400 uppercase tracking-wide">
@@ -153,7 +151,7 @@ const LogicVisualizer = () => {
       {/* Diagram Container */}
       <div className="relative bg-[#0a0a0c] border border-white/10 rounded-xl p-16 overflow-hidden shadow-2xl">
         {/* Tech Grid Background */}
-        <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px]" />
 
         {/* Labels */}
         <div className="absolute top-6 left-6 text-xs font-mono text-zinc-500 uppercase tracking-widest">// Execution_Flow_V1</div>
@@ -184,9 +182,9 @@ const LogicVisualizer = () => {
           </motion.div>
 
           {/* Connector 1 */}
-          <div className="flex-1 h-[2px] bg-zinc-800 relative overflow-hidden rounded-full">
+          <div className="flex-1 h-0.5 bg-zinc-800 relative overflow-hidden rounded-full">
             <motion.div 
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-lime-500 to-transparent opacity-50"
+              className="absolute inset-0 bg-linear-to-r from-transparent via-lime-500 to-transparent opacity-50"
               initial={{ x: '-100%' }}
               animate={isInView ? { x: '100%' } : {}}
               transition={{ duration: 2, ease: "linear", repeat: Infinity }}
@@ -210,9 +208,9 @@ const LogicVisualizer = () => {
                 initial={{ height: 0 }}
                 animate={isInView ? { height: '100%' } : {}}
                 transition={{ duration: 1, delay: 0.8 }}
-                className="w-[1px] bg-zinc-600"
+                className="w-px bg-zinc-600"
               />
-              <div className="w-2 h-2 bg-zinc-600 rounded-full mt-[-1px]" />
+              <div className="w-2 h-2 bg-zinc-600 rounded-full -mt-px" />
             </div>
 
             <div className="w-32 h-32 bg-[#0e0e10] border border-amber-500/40 rounded-2xl flex items-center justify-center shadow-[0_0_50px_-10px_rgba(245,158,11,0.15)] relative">
@@ -235,20 +233,20 @@ const LogicVisualizer = () => {
               <motion.path 
                 d="M0 64 C 60 64, 80 20, 140 20"
                 fill="none"
-                stroke="#84cc16" // Lime-500
+                stroke="#84cc16"
                 strokeWidth="2"
                 strokeDasharray="6 6"
-                variants={variants.lineDraw}
+                variants={lineDrawVariants}
                 initial="hidden"
                 animate={isInView ? "visible" : "hidden"}
               />
-               <motion.path 
+              <motion.path 
                 d="M0 64 C 60 64, 80 108, 140 108"
                 fill="none"
-                stroke="#ef4444" // Red-500
+                stroke="#ef4444"
                 strokeWidth="2"
                 strokeDasharray="6 6"
-                variants={variants.lineDraw}
+                variants={lineDrawVariants}
                 initial="hidden"
                 animate={isInView ? "visible" : "hidden"}
               />
@@ -335,7 +333,7 @@ const Hero = () => {
         >
           Fund the Future, <br />
           <span className="text-lime-400">
-            On <span className="underline decoration-4 decoration-lime-400 underline-offset-[12px]">Your</span> Terms.
+            On <span className="underline decoration-4 decoration-lime-400 underline-offset-12">Your</span> Terms.
           </span>
         </motion.h1>
 
@@ -392,7 +390,7 @@ const ProcessCard = ({ number, title, desc, icon: Icon }: { number: string, titl
       <div className="w-12 h-12 rounded-md bg-[#111] border border-zinc-800 flex items-center justify-center text-sm font-mono text-zinc-500 group-hover:border-lime-500 group-hover:text-lime-400 transition-colors duration-300 z-10">
         {number}
       </div>
-      <div className="w-[1px] flex-1 bg-zinc-800 group-last:hidden my-2" />
+      <div className="w-px flex-1 bg-zinc-800 group-last:hidden my-2" />
     </div>
 
     {/* Right Column: Content */}
@@ -431,12 +429,12 @@ const ValueCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc
 export default function Home() {
   return (
     <TooltipProvider>
-      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
+      <main className="min-h-screen bg-surface selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
         
         <Hero />
 
         {/* SECTION: HOW IT WORKS (LOGIC) */}
-        <section className="py-32 px-6 border-b border-white/5 bg-[#050505]">
+        <section className="py-32 px-6 border-b border-white/5 bg-background">
           <Reveal className="text-center mb-16">
             <h2 className="text-sm font-mono text-lime-400 uppercase tracking-widest mb-4">Architecture</h2>
             <h3 className="text-3xl md:text-4xl font-bold text-white">The Logic Engine</h3>
@@ -488,7 +486,7 @@ export default function Home() {
         </section>
 
         {/* SECTION: PROCESS TIMELINE */}
-        <section className="py-32 px-6 bg-gradient-to-b from-[#09090b] to-[#000]">
+        <section className="py-32 px-6 bg-linear-to-b from-surface to-black">
           <div className="max-w-4xl mx-auto">
             <Reveal className="mb-20 text-center">
                <h2 className="text-3xl font-bold text-white">System Operations</h2>

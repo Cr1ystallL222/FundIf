@@ -133,7 +133,7 @@ const AssetRow = ({ label, value, icon, symbol, symbolPosition = 'right' }: Asse
     {/* Right: Quantity + Symbol */}
     <div className="text-right flex items-baseline justify-end gap-1.5 min-w-[120px]">
       {symbolPosition === 'left' && (
-        <span className="text-xl text-zinc-600 font-medium translate-y-[1px]">{symbol}</span>
+        <span className="text-xl text-zinc-600 font-medium translate-y-px">{symbol}</span>
       )}
       
       <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
@@ -234,7 +234,7 @@ export default function ProfilePage() {
   // --- RENDER: NOT CONNECTED ---
   if (mounted && !isConnected) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 bg-[#09090b]">
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 bg-surface">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }} 
           animate={{ opacity: 1, scale: 1 }}
@@ -260,7 +260,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen py-12 px-6 bg-[#09090b]">
+      <div className="min-h-screen py-12 px-6 bg-surface">
         <DashboardSkeleton />
       </div>
     );
@@ -268,7 +268,7 @@ export default function ProfilePage() {
 
   // --- RENDER: MAIN DASHBOARD ---
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-[#09090b] text-zinc-200 overflow-hidden">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-surface text-zinc-200 overflow-hidden">
       
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -303,7 +303,7 @@ export default function ProfilePage() {
             </div>
             
             {/* Subtle Gradient Overlay */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-white/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-bl from-white/5 to-transparent rounded-full blur-3xl pointer-events-none" />
           </motion.div>
 
           {/* Assets Panel */}
@@ -342,7 +342,7 @@ export default function ProfilePage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-4 z-20 bg-[#09090b]/90 backdrop-blur-xl p-2.5 -mx-2.5 rounded-2xl border border-white/5 shadow-xl"
+          className="flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-4 z-20 bg-surface/90 backdrop-blur-xl p-2.5 -mx-2.5 rounded-2xl border border-white/5 shadow-xl"
         >
           <div className="flex p-1 bg-zinc-900/80 rounded-xl border border-white/5 w-full sm:w-auto relative">
             {(['all', 'active', 'completed'] as TabType[]).map((tab) => (

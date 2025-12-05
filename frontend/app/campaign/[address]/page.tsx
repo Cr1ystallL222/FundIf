@@ -6,7 +6,6 @@ import { useCampaign } from '@/hooks/useCampaign';
 import { FundForm } from '@/components/forms/FundForm';
 import ResolutionActions from '@/components/campaign/ResolutionActions';
 import { OracleController } from '@/components/debug/OracleController';
-import { getCampaignImage } from '@/lib/constants/campaign-images';
 import { CreatorBadge } from '@/components/ui/CreatorBadge';
 
 /* ==========================================
@@ -112,9 +111,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
     if (!campaign) return;
 
     const fetchMarket = async () => {
-      // Try to get slug or ID from campaign object. 
-      // Note: Ensure your useCampaign hook actually returns marketSlug, otherwise fallback to conditionId
-      // @ts-ignore - Assuming marketSlug might exist on the returned object even if not strictly typed yet
+      // @ts-ignore
       const slug = campaign.marketSlug; 
       const conditionId = campaign.conditionId;
 
@@ -193,14 +190,30 @@ export default function CampaignPage({ params }: CampaignPageProps) {
     month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
-  const campaignImage = getCampaignImage(address);
+  // --- IMAGE URL CONSTRUCTION ---
+  const campaignImage = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/campaign-images/${address}.png`;
 
   return (
     <div className="min-h-screen pb-12 bg-[#09090b]">
-      {/* Hero Image Banner */}
-      <div className="h-64 w-full relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/60 to-transparent z-10" />
-        <img src={campaignImage} alt="Campaign Cover" className="w-full h-full object-cover opacity-60" />
+      
+      {/* Hero Image Banner with Dimming */}
+      <div className="h-64 w-full relative overflow-hidden bg-[#18181b]">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-zinc-900 z-0" />
+        
+        <img 
+          src={campaignImage} 
+          alt="Campaign Cover" 
+          className="w-full h-full object-cover relative z-0"
+          onError={(e) => {
+             e.currentTarget.style.display = 'none';
+          }}
+        />
+
+        {/* Moderate Dimming Overlay */}
+        <div className="absolute inset-0 bg-black/50 z-10 pointer-events-none" />
+
+        {/* Bottom Fade */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/60 to-transparent z-20 pointer-events-none" />
       </div>
 
       <motion.div 
@@ -260,10 +273,17 @@ export default function CampaignPage({ params }: CampaignPageProps) {
                 )}
               </div>
 
-              {/* Verified Badges Section */}
+              {/* Verified Badges Section - UPDATED with Explicit Labels */}
               <div className="flex flex-wrap gap-8 p-4 bg-white/5 rounded-xl border border-white/5">
-                <CreatorBadge address={campaign.creator} label="Creator" />
-                <CreatorBadge address={campaign.recipient} label="Recipient" />
+                <div className="flex items-center gap-2">
+                   <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Creator:</span>
+                   <CreatorBadge address={campaign.creator} />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                   <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Recipient:</span>
+                   <CreatorBadge address={campaign.recipient} />
+                </div>
               </div>
             </motion.div>
 

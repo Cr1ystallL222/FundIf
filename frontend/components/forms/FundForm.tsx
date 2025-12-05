@@ -8,14 +8,23 @@ import {
   useWriteContract, 
   useWaitForTransactionReceipt 
 } from 'wagmi';
-// Experimental hooks for Gasless/Batching
 import { useCapabilities, useWriteContracts } from 'wagmi/experimental';
 import { parseUnits, formatUnits, type Address } from 'viem';
 import { baseSepolia } from 'viem/chains';
 
+// NEW: Direct Icon Imports (Fixes the Crash)
+import { 
+  Zap, 
+  Wallet, 
+  Check, 
+  Lock, 
+  ArrowRight, 
+  AlertCircle, 
+  Loader2 
+} from 'lucide-react';
+
 import { USDC_ADDRESS } from '@/lib/contracts/addresses';
 import { ERC20ABI, CampaignABI } from '@/lib/contracts/abis';
-import { Icons } from '@/components/ui/Icons'; 
 
 const USDC_DECIMALS = 6;
 const PAYMASTER_URL = process.env.NEXT_PUBLIC_PAYMASTER_URL;
@@ -79,8 +88,6 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
   // --- HANDLERS ---
   const handleGaslessSubmit = () => {
     const contracts = [];
-    
-    // 1. Batch Approve (if needed)
     if (needsApproval) {
       contracts.push({
         address: usdcAddr,
@@ -89,8 +96,6 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
         args: [campaignAddr, parsedAmount],
       });
     }
-    
-    // 2. Batch Fund
     contracts.push({
       address: campaignAddr,
       abi: CampaignABI,
@@ -98,12 +103,11 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
       args: [parsedAmount],
     });
 
-    // 3. Send with Paymaster
     writeContracts({
       contracts,
       capabilities: {
         paymasterService: {
-          url: PAYMASTER_URL || undefined // Fallback to default if no URL
+          url: PAYMASTER_URL || ''
         }
       }
     });
@@ -127,7 +131,6 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
     }
   };
 
-  // --- UI TEXT ---
   const getButtonText = () => {
     if (isInsufficientBalance) return 'Insufficient Balance';
     if (isBatchPending) return 'Processing Gasless Tx...';
@@ -138,25 +141,41 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
     return 'Fund Campaign';
   };
 
+  const formattedBalance = balance ? formatUnits(balance, USDC_DECIMALS) : '0';
+  const isLoading = isBatchPending || isApprovePending || isFundPending;
+
+  if (!isConnected) {
+    return (
+      <div className="p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/10 text-center">
+        <Wallet className="w-5 h-5 mx-auto mb-2 text-yellow-500" />
+        <p className="text-sm text-yellow-200 font-medium">Connect Wallet to Fund</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {/* Input Area */}
       <div className="relative group">
+        <div className="flex justify-between mb-2 text-xs text-zinc-400">
+          <span>Amount</span>
+          <span>Balance: {formattedBalance}</span>
+        </div>
         <input
           type="text"
           inputMode="decimal"
           placeholder="0.00"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-4 pr-16 py-4 text-xl font-mono text-white focus:outline-none focus:border-blue-500"
+          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-4 pr-16 py-4 text-xl font-mono text-white focus:outline-none focus:border-blue-500 transition-colors"
         />
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm">USDC</div>
+        <div className="absolute right-4 top-10 -translate-y-1/2 text-zinc-400 font-bold text-sm">USDC</div>
       </div>
 
       {/* FUND BUTTON */}
       <button
         onClick={hasPaymaster ? handleGaslessSubmit : handleStandardSubmit}
-        disabled={!isConnected || isInsufficientBalance || isBatchPending || isFundPending}
+        disabled={!isConnected || isInsufficientBalance || isLoading}
         className={`w-full h-14 rounded-xl font-bold text-lg shadow-lg transition-all flex flex-col items-center justify-center ${
           hasPaymaster 
             ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-500/25'
@@ -164,12 +183,15 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
         }`}
       >
         <div className="flex items-center gap-2">
-          {hasPaymaster && <Icons.Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />}
+          {/* Fixed Icons */}
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+             hasPaymaster ? <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" /> : <Wallet className="w-5 h-5" />
+          )}
           {getButtonText()}
         </div>
         
         {/* SUBTEXT FLEX */}
-        {hasPaymaster && (
+        {hasPaymaster && !isLoading && (
           <span className="text-[10px] opacity-90 font-medium tracking-wider uppercase mt-0.5">
             Network Cost: <span className="text-green-300">Sponsored</span>
           </span>

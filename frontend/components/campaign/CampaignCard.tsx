@@ -6,7 +6,6 @@ import { useReadContracts } from 'wagmi';
 import { formatUnits, type Address } from 'viem';
 import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
-import { getCampaignImage } from '@/lib/constants/campaign-images';
 import { CreatorBadge } from '@/components/ui/CreatorBadge';
 
 // Ensure ABI includes marketSlug
@@ -188,7 +187,6 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
   const [isMarketLoading, setIsMarketLoading] = useState(false);
 
   // --- C. Fetch Polymarket Data ---
-    // --- C. Fetch Polymarket Data ---
   useEffect(() => {
     const fetchMarket = async () => {
       const ZERO_CONDITION_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -204,10 +202,8 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
         let targetMarket = null;
         let foundSlug = contractSlug || "";
 
-        // STRATEGY 1: Fetch via Market Slug (Using local API Proxy)
         if (contractSlug && contractSlug.trim()) {
           try {
-            // CHANGE: Point to your local API
             const response = await fetch(`/api/markets?slug=${contractSlug.trim()}`);
             if (response.ok) {
               const data = await response.json();
@@ -221,19 +217,16 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
           }
         }
 
-        // STRATEGY 2: Fallback to Condition IDs (Using local API Proxy)
         if (!targetMarket && isValidConditionId) {
           try {
             const conditionIdWithoutPrefix = conditionId!.startsWith('0x') 
               ? conditionId!.slice(2).toLowerCase()
               : conditionId!.toLowerCase();
             
-            // CHANGE: Point to your local API
             const response = await fetch(`/api/markets?condition_id=${conditionIdWithoutPrefix}`);
             
             if (response.ok) {
               const data = await response.json();
-              // Handling Array vs Object return types
               if (Array.isArray(data) && data.length > 0) {
                 targetMarket = data[0];
                 if (targetMarket.slug) foundSlug = targetMarket.slug;
@@ -327,7 +320,10 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
     : 0;
   
   const isExpired = deadline ? Number(deadline) * 1000 < Date.now() : false;
-  const imageUrl = getCampaignImage(campaignAddress);
+
+  // --- IMAGE URL CONSTRUCTION ---
+  // We assume the image is stored as "[address].png" in the bucket
+  const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/campaign-images/${campaignAddress}.png`;
 
   const formatMoney = (val: bigint) => 
     `$${Number(formatUnits(val || 0n, 6)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
@@ -362,12 +358,22 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="group relative w-full h-full bg-[#09090b] rounded-2xl border border-white/5 hover:border-white/20 overflow-hidden flex flex-col shadow-lg hover:shadow-2xl transition-colors"
       >
-        <div className="relative h-40 w-full overflow-hidden">
+        {/* IMAGE CONTAINER */}
+        <div className="relative h-40 w-full overflow-hidden bg-[#18181b]">
+          {/* This div serves as the gradient fallback */}
+          <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-black z-0" />
+          
           <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0e] to-transparent z-10" />
           <img 
             src={imageUrl} 
             alt={title}
-            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out opacity-80 group-hover:opacity-100"
+            // Handle Error: If 404 (no image), hide the img tag and show the gradient parent
+            onError={(e) => {
+               e.currentTarget.style.display = 'none';
+               // Optionally add a more colorful gradient class to the parent
+               e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', 'from-zinc-800', 'to-zinc-900');
+            }}
+            className="relative z-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out opacity-80 group-hover:opacity-100"
           />
           <div className="absolute top-3 left-3 z-20">
             <div className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md ${statusStyles}`}>

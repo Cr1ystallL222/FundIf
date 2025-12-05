@@ -13,10 +13,10 @@ import Link from 'next/link';
 import { 
   motion, 
   AnimatePresence, 
-  Variants, 
   useScroll, 
   useTransform,
-  useInView 
+  useInView,
+  Variants
 } from 'framer-motion';
 
 // ============================================================================
@@ -47,6 +47,9 @@ const Icons = {
   ),
   X: ({ className = "" }) => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  ),
+  IdCard: ({ className = "" }) => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" className={className}><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><line x1="15" y1="8" x2="17" y2="8"/><line x1="15" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
   )
 };
 
@@ -69,12 +72,13 @@ const Reveal = ({ children, delay = 0, className = "" }: { children: ReactNode, 
   );
 };
 
+// FIXED: Renamed from 'pathVariants' to 'lineDrawVariants' to match usage in LogicVisualizer
 const lineDrawVariants: Variants = {
   hidden: { pathLength: 0, opacity: 0 },
   visible: { 
     pathLength: 1, 
     opacity: 1, 
-    transition: { duration: 1.5, ease: "easeInOut" as const } 
+    transition: { duration: 1.2, ease: "easeInOut" } 
   }
 };
 
@@ -111,7 +115,7 @@ const TooltipProvider = ({ children }: { children: ReactNode }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 2 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-9999 pointer-events-none px-3 py-2 rounded-md border border-lime-400/30 bg-[#111113] shadow-[0_0_30px_-10px_rgba(163,230,53,0.2)]"
+            className="fixed z-[9999] pointer-events-none px-3 py-2 rounded-md border border-lime-400/30 bg-[#111113] shadow-[0_0_30px_-10px_rgba(163,230,53,0.2)]"
             style={{ left: state.x, top: state.y - 16, transform: 'translate(-50%, -100%)' }}
           >
             <div className="text-[11px] font-mono text-lime-400 uppercase tracking-wide">
@@ -138,7 +142,7 @@ const useTooltip = (id: string, content: string) => {
 };
 
 // ============================================================================
-// 4. COMPONENT: LOGIC VISUALIZER (Expanded & Clarified)
+// 4. COMPONENT: LOGIC VISUALIZER (Fixed Logic Engine)
 // ============================================================================
 
 const LogicVisualizer = () => {
@@ -192,39 +196,39 @@ const LogicVisualizer = () => {
           </div>
 
           {/* 2. Central Processor (Smart Contract) */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={isInView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ delay: 0.4 }}
-            className="flex flex-col items-center gap-6 relative z-20"
+          <div 
+            className="flex flex-col items-center relative z-20"
             {...useTooltip('node-contract', 'Immutable Logic')}
           >
-            {/* Oracle Input Animation */}
+            {/* Oracle Input - Static (No Animation) */}
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-col items-center h-24 justify-end pb-2">
               <div className="px-3 py-1.5 bg-[#1a1a1c] border border-zinc-700 rounded text-[10px] font-mono text-zinc-300 whitespace-nowrap mb-2">
                 Polymarket API
               </div>
-              <motion.div 
-                initial={{ height: 0 }}
-                animate={isInView ? { height: '100%' } : {}}
-                transition={{ duration: 1, delay: 0.8 }}
-                className="w-px bg-zinc-600"
-              />
+              <div className="w-px h-full bg-zinc-600" />
               <div className="w-2 h-2 bg-zinc-600 rounded-full -mt-px" />
             </div>
 
-            <div className="w-32 h-32 bg-[#0e0e10] border border-amber-500/40 rounded-2xl flex items-center justify-center shadow-[0_0_50px_-10px_rgba(245,158,11,0.15)] relative">
-              <div className="absolute inset-0 rounded-2xl border border-amber-500/20 animate-pulse" />
-              <div className="text-center space-y-2">
-                <Icons.Lock className="mx-auto text-amber-500 w-8 h-8" />
-                <div className="text-[10px] font-mono text-amber-500 uppercase tracking-wider">Escrow<br/>Locked</div>
+            {/* Animated Contract Body */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={isInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ delay: 0.4 }}
+              className="flex flex-col items-center gap-6"
+            >
+              <div className="w-32 h-32 bg-[#0e0e10] border border-amber-500/40 rounded-2xl flex items-center justify-center shadow-[0_0_50px_-10px_rgba(245,158,11,0.15)] relative">
+                <div className="absolute inset-0 rounded-2xl border border-amber-500/20 animate-pulse" />
+                <div className="text-center space-y-2">
+                  <Icons.Lock className="mx-auto text-amber-500 w-8 h-8" />
+                  <div className="text-[10px] font-mono text-amber-500 uppercase tracking-wider">Escrow<br/>Locked</div>
+                </div>
               </div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm font-mono text-amber-500 uppercase tracking-wider mb-1">Smart Contract</div>
-              <div className="text-xs text-zinc-500">Awaits Resolution</div>
-            </div>
-          </motion.div>
+              <div className="text-center">
+                <div className="text-sm font-mono text-amber-500 uppercase tracking-wider mb-1">Smart Contract</div>
+                <div className="text-xs text-zinc-500">Awaits Resolution</div>
+              </div>
+            </motion.div>
+          </div>
 
           {/* Connector 2 (Split) */}
           <div className="flex-1 relative h-32 w-48">
@@ -333,7 +337,7 @@ const Hero = () => {
         >
           Fund the Future, <br />
           <span className="text-lime-400">
-            On <span className="underline decoration-4 decoration-lime-400 underline-offset-12">Your</span> Terms.
+            On <span className="underline decoration-4 decoration-lime-400 underline-offset-[12px]">Your</span> Terms.
           </span>
         </motion.h1>
 
@@ -344,7 +348,7 @@ const Hero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.7 }}
         >
-          A crowdfunding protocol tied to reality. Funds held in escrow and unlock <span className="text-white font-semibold">only</span> if a specific prediction market event resolves to "YES".
+          A crowdfunding protocol tied to reality. Funds held in escrow and unlock <span className="text-white font-semibold">only</span> if a specific prediction market event resolves to <span className="text-lime-400 font-semibold">YES</span>.
         </motion.p>
 
         {/* Buttons */}
@@ -356,7 +360,7 @@ const Hero = () => {
         >
           <Link href="/create" className="w-full sm:w-auto">
             <button className="w-full sm:w-auto px-10 py-5 bg-white text-black font-bold rounded-sm hover:bg-zinc-200 transition-colors flex items-center justify-center gap-3 text-base group">
-              Create Contract
+              Create Campaign
               <Icons.CornerDownRight className="group-hover:translate-x-1 transition-transform" />
             </button>
           </Link>
@@ -380,7 +384,7 @@ const Hero = () => {
 };
 
 // ============================================================================
-// 6. COMPONENT: PROCESS TRACK (Redesigned Steps)
+// 6. COMPONENT: PROCESS TRACK
 // ============================================================================
 
 const ProcessCard = ({ number, title, desc, icon: Icon }: { number: string, title: string, desc: string, icon: any }) => (
@@ -390,7 +394,7 @@ const ProcessCard = ({ number, title, desc, icon: Icon }: { number: string, titl
       <div className="w-12 h-12 rounded-md bg-[#111] border border-zinc-800 flex items-center justify-center text-sm font-mono text-zinc-500 group-hover:border-lime-500 group-hover:text-lime-400 transition-colors duration-300 z-10">
         {number}
       </div>
-      <div className="w-px flex-1 bg-zinc-800 group-last:hidden my-2" />
+      <div className="w-[1px] flex-1 bg-zinc-800 group-last:hidden my-2" />
     </div>
 
     {/* Right Column: Content */}
@@ -412,7 +416,7 @@ const ProcessCard = ({ number, title, desc, icon: Icon }: { number: string, titl
 
 const ValueCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc: string }) => (
   <Reveal>
-    <div className="group p-8 bg-zinc-900/30 border border-zinc-800/60 rounded-lg hover:border-lime-500/50 hover:bg-zinc-900/60 transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(132,204,22,0.2)] cursor-default h-full">
+    <div className="group p-8 bg-zinc-900/30 border border-zinc-800/60 rounded-lg hover:border-lime-500/50 hover:bg-zinc-900/60 transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(132,204,22,0.2)] cursor-default h-full flex flex-col">
       <div className="mb-6 w-12 h-12 rounded bg-zinc-800/50 flex items-center justify-center group-hover:bg-lime-500/20 transition-colors">
         <Icon className="text-zinc-400 group-hover:text-lime-400 transition-colors w-6 h-6" />
       </div>
@@ -429,13 +433,13 @@ const ValueCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc
 export default function Home() {
   return (
     <TooltipProvider>
-      <main className="min-h-screen bg-surface selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
+      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
         
         <Hero />
 
         {/* SECTION: HOW IT WORKS (LOGIC) */}
-        <section className="py-32 px-6 border-b border-white/5 bg-background">
-          <Reveal className="text-center mb-16">
+        <section className="py-32 px-6 border-b border-white/5 bg-[#050505]">
+          <Reveal className="text-center mb-10">
             <h2 className="text-sm font-mono text-lime-400 uppercase tracking-widest mb-4">Architecture</h2>
             <h3 className="text-3xl md:text-4xl font-bold text-white">The Logic Engine</h3>
           </Reveal>
@@ -443,8 +447,7 @@ export default function Home() {
           <LogicVisualizer />
 
           {/* Mobile Fallback for Logic Diagram */}
-          <div className="md:hidden max-w-sm mx-auto space-y-4">
-             {/* Just a simple simplified stack for mobile */}
+          <div className="md:hidden max-w-sm mx-auto space-y-4 mt-12">
              <div className="p-4 bg-zinc-900 rounded border border-zinc-800 text-center text-white">1. Backers Deposit USDC</div>
              <div className="flex justify-center text-zinc-600">↓</div>
              <div className="p-4 bg-zinc-900 rounded border border-amber-500/50 text-center text-amber-500">2. Contract Waits for Oracle</div>
@@ -465,28 +468,33 @@ export default function Home() {
                 Trust <span className="text-lime-400">code</span>.
               </h2>
               <p className="text-xl text-zinc-400 leading-relaxed">
-                Traditional crowdfunding relies on the creator's goodwill. FundIf relies on cryptographic truth. 
-                We replace "Trust me, bro" with immutable smart contracts.
+                Traditional crowdfunding asks you to believe the creator will follow through. 
+                FundIf binds funds to reality. It allows for <span className="text-white font-medium">conditional funding</span>—pledging capital that only moves if a specific real-world event happens first.
               </p>
             </Reveal>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ValueCard 
-                icon={Icons.Scale}
-                title="Enforced Accountability"
-                desc="Creators only get paid if they deliver results verified by the market. No more vaporware, no more rug pulls. The oracle decides, not the creator."
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <ValueCard 
                 icon={Icons.GitBranch}
-                title="Conditional Hedges"
-                desc="Fund specific outcomes. Want to fund a party only if Bitcoin hits $100k? You can. If the outcome fails, your capital is returned 100%."
+                title="Conditional Triggers"
+                desc="Fund a cause ONLY if a specific event happens. Like donating to a legal defense fund only if charges are filed. This isn't about verifying milestones; it's about programmatic contingency."
+              />
+              <ValueCard 
+                icon={Icons.IdCard}
+                title="Identity & Transparency"
+                desc="Powered by Basenames. You see exactly who you are funding. The contract is verified and open-source, ensuring that once the campaign starts, the creator has zero control over the funds."
+              />
+              <ValueCard 
+                icon={Icons.Shield}
+                title="Guaranteed Refunds"
+                desc="There is no middleman to beg for a refund. If the Polymarket oracle resolves the event to NO, the smart contract automatically unlocks 100% of funds for backers to claim."
               />
             </div>
           </div>
         </section>
 
         {/* SECTION: PROCESS TIMELINE */}
-        <section className="py-32 px-6 bg-linear-to-b from-surface to-black">
+        <section className="py-32 px-6 bg-gradient-to-b from-[#09090b] to-[#000]">
           <div className="max-w-4xl mx-auto">
             <Reveal className="mb-20 text-center">
                <h2 className="text-3xl font-bold text-white">System Operations</h2>
@@ -497,25 +505,25 @@ export default function Home() {
               <ProcessCard 
                 number="01" 
                 title="Define the Condition" 
-                desc="The creator launches a campaign and links it to a specific Polymarket event (e.g., 'Will Starship reach orbit in 2024?'). This sets the 'Truth Source' for the contract."
+                desc="The creator launches a campaign and links it to a specific Polymarket event (e.g., 'Will Candidate X win the primary?'). This sets the 'Truth Source' for the escrow contract."
                 icon={Icons.GitBranch}
               />
               <ProcessCard 
                 number="02" 
                 title="Crowdfund in Escrow" 
-                desc="Backers contribute USDC. Funds are locked in a smart contract. Neither the creator nor FundIf can touch them until the condition is met."
+                desc="Backers contribute USDC. Funds are locked in a smart contract. Neither the creator nor FundIf can touch them. The outcome is entirely dependent on the external event."
                 icon={Icons.Lock}
               />
               <ProcessCard 
                 number="03" 
                 title="Oracle Resolution" 
-                desc="Once the Polymarket event resolves, the UMA optimistic oracle pushes the result to our contract on-chain. This process is decentralized and tamper-proof."
+                desc="Once the event concludes, the UMA optimistic oracle pushes the definitive result (YES or NO) to our contract on-chain."
                 icon={Icons.Scale}
               />
                <ProcessCard 
                 number="04" 
                 title="Automatic Settlement" 
-                desc="Logic executes immediately. If the result is YES, funds stream to the creator. If NO, backers can claim a 100% refund with one click."
+                desc="Logic executes immediately. If YES, funds stream to the creator to execute their vision. If NO, the campaign is voided and backers are automatically refunded."
                 icon={Icons.Shield}
               />
             </div>
@@ -528,11 +536,11 @@ export default function Home() {
             <div className="max-w-2xl mx-auto">
               <h2 className="text-5xl font-bold text-white mb-8 tracking-tight">Ready to build?</h2>
               <p className="text-zinc-400 mb-10 text-lg">
-                Launch a campaign in minutes. No coding required.
+                Launch a conditional campaign in minutes.
               </p>
               <Link href="/create">
                 <button className="px-12 py-5 bg-lime-400 text-black font-bold text-lg rounded-sm hover:bg-lime-300 transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_-10px_rgba(163,230,53,0.4)]">
-                  Start a Campaign
+                  Create Campaign
                 </button>
               </Link>
             </div>

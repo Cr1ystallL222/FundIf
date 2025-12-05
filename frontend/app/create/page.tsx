@@ -11,7 +11,7 @@ import { isAddress } from 'viem';
 import { useRouter } from 'next/navigation';
 import { 
   Loader2, AlertCircle, CheckCircle2, ArrowRight, Search, Info, 
-  Calendar, Wallet, RefreshCw, ExternalLink
+  Calendar, Wallet, RefreshCw, ExternalLink, Upload, X, Image as ImageIcon
 } from 'lucide-react';
 
 import { 
@@ -67,7 +67,6 @@ const campaignSchema = z.object({
   deadline: z.string().refine((val) => new Date(val) > new Date(), { message: "Deadline must be in the future" }),
   conditionId: z.string().min(1, "Market selection is required"),
   marketQuestion: z.string().optional(),
-  // New: Market Slug is now required for the contract
   marketSlug: z.string().min(1, "Market slug is required"), 
 });
 
@@ -92,7 +91,6 @@ const Tooltip = ({ content }: { content: string }) => {
 const FormLabel = ({ children, required, tooltip }: { children: React.ReactNode; required?: boolean; tooltip?: string }) => (
   <label className="flex items-center text-xs font-medium text-zinc-400 mb-2 uppercase tracking-wider">
     {children}
-    {/* Changed to lime-500 */}
     {required && <span className="text-lime-500 ml-0.5">*</span>}
     {tooltip && <Tooltip content={tooltip} />}
   </label>
@@ -124,7 +122,7 @@ interface Market {
   slug: string;
   outcomePrices: number[];
   eventTitle?: string;
-  endDate?: string | null; // Added endDate to interface
+  endDate?: string | null;
 }
 
 const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => void; disabled: boolean; error?: string }) => {
@@ -172,7 +170,6 @@ const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => 
     <div className="relative z-50" ref={wrapperRef}>
       <div className={cn(
         "relative flex items-center w-full h-12 px-4 rounded-lg border bg-elevated transition-all duration-200",
-        // Changed focus-within border/ring to lime
         error ? "border-red-500/50 focus-within:border-red-500" : "border-white/10 focus-within:border-lime-500/50 focus-within:ring-1 focus-within:ring-lime-500/20",
         disabled && "opacity-50 cursor-not-allowed"
       )}>
@@ -186,7 +183,6 @@ const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => 
           placeholder="Search events (e.g. 'Bitcoin', 'Election', 'Rate Cut')..."
           className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder:text-zinc-600"
         />
-        {/* Changed loader color to lime */}
         {loading && <Loader2 className="w-4 h-4 text-lime-500 animate-spin" />}
       </div>
 
@@ -244,6 +240,11 @@ export default function CreateCampaignPage() {
   const { address, isConnected } = useAccount();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recipientInput, setRecipientInput] = useState("");
+  
+  // NEW: State for image handling
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const {
     createCampaign,
@@ -277,6 +278,59 @@ export default function CreateCampaignPage() {
     }
   }, [address]); 
 
+  // NEW: Handle Image Selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate size (e.g., max 4MB)
+      if (file.size > 4 * 1024 * 1024) {
+        alert("File size too large. Please upload an image under 4MB.");
+        return;
+      }
+      setImageFile(file);
+      // Create local preview URL
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+    }
+  };
+
+  // NEW: Clear Image
+  const clearImage = () => {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+  };
+
+  // NEW: Upload Image Effect
+  // Watches for blockchain success, then uploads image to server associated with address
+  useEffect(() => {
+    const uploadImageToServer = async () => {
+      if (isSuccess && createdCampaignAddress && imageFile) {
+        setIsUploading(true);
+        try {
+          const formData = new FormData();
+          formData.append('file', imageFile);
+          formData.append('campaignAddress', createdCampaignAddress);
+
+          const res = await fetch('/api/campaign/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!res.ok) throw new Error('Failed to upload image');
+          console.log("Image uploaded successfully for campaign", createdCampaignAddress);
+        } catch (error) {
+          console.error("Image upload error:", error);
+          // Note: Campaign is still created on-chain, just image upload failed.
+        } finally {
+          setIsUploading(false);
+        }
+      }
+    };
+
+    uploadImageToServer();
+  }, [isSuccess, createdCampaignAddress, imageFile]);
+
   // --- SUBMISSION LOGIC ---
   const onSubmit = (data: FormValues) => {
     if (!isConnected) return;
@@ -291,7 +345,7 @@ export default function CreateCampaignPage() {
         goalAmount: data.goalAmount,
         recipient: data.recipient as `0x${string}`,
         conditionId: conditionIdBytes32,
-        marketSlug: data.marketSlug, // Passed from form state (required now)
+        marketSlug: data.marketSlug,
         deadline: deadlineTimestamp,
       });
     } catch (err) {
@@ -311,23 +365,21 @@ export default function CreateCampaignPage() {
           animate={{ scale: 1, opacity: 1 }}
           className="max-w-md w-full bg-surface border border-white/10 rounded-2xl p-8 relative overflow-hidden"
         >
-          {/* Changed background glow to lime */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-lime-500/10 blur-3xl -z-10" />
           <div className="flex flex-col items-center text-center">
             <motion.div 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              // Changed success icon background and border to lime
               className="w-16 h-16 bg-lime-500/10 rounded-full flex items-center justify-center border border-lime-500/20 mb-6"
             >
-              {/* Changed icon color to lime-400 */}
               <CheckCircle2 className="w-8 h-8 text-lime-400" />
             </motion.div>
 
             <h2 className="text-2xl font-bold text-white mb-2">Campaign Deployed</h2>
             <p className="text-zinc-400 text-sm mb-8">
               Your condition-based fundraising campaign is live on the blockchain.
+              {isUploading && <span className="block mt-2 text-lime-500 text-xs animate-pulse">Syncing image to server...</span>}
             </p>
 
             <div className="w-full bg-[#111113] border border-white/5 rounded-xl p-4 mb-6 text-left space-y-4">
@@ -347,7 +399,6 @@ export default function CreateCampaignPage() {
                     href={`https://sepolia.basescan.org/tx/${hash}`} 
                     target="_blank" 
                     rel="noreferrer"
-                    // Changed link text color to lime
                     className="text-xs text-lime-400 hover:text-lime-300 flex items-center gap-1"
                   >
                     Explorer <ArrowRight className="w-3 h-3" />
@@ -382,9 +433,7 @@ export default function CreateCampaignPage() {
   // MAIN FORM
   // ===========================================================================
   return (
-    // Changed selection color to lime
     <div className="min-h-screen bg-surface text-white selection:bg-lime-500/30 selection:text-lime-200 pb-20">
-      {/* Changed gradient from blue to lime */}
       <div className="fixed top-0 left-0 right-0 h-96 bg-linear-to-b from-lime-900/10 via-surface/50 to-surface pointer-events-none z-0" />
       
       <main className="relative z-10 max-w-7xl mx-auto px-6 pt-12 lg:pt-20">
@@ -396,7 +445,6 @@ export default function CreateCampaignPage() {
           className="mb-12 max-w-2xl"
         >
           <div className="flex items-center gap-3 mb-4">
-            {/* Changed line and text to lime */}
             <div className="h-px w-8 bg-lime-500" />
             <span className="text-lime-400 text-xs font-mono uppercase tracking-widest">Campaign Studio</span>
           </div>
@@ -444,13 +492,55 @@ export default function CreateCampaignPage() {
                     {...register('title')}
                     disabled={isPending}
                     placeholder="e.g. Mainnet Launch Fund"
-                    // Changed focus border/ring to lime
                     className={cn(
                       "w-full bg-elevated border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
                       errors.title ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
                     )}
                   />
                   <InputError message={errors.title?.message} />
+                </div>
+
+                {/* NEW: IMAGE UPLOAD SECTION */}
+                <div className="space-y-1">
+                  <FormLabel tooltip="Upload a cover image for your campaign card (Max 4MB)">Cover Image</FormLabel>
+                  <div className="relative group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      disabled={isPending}
+                      id="image-upload"
+                      className="hidden"
+                    />
+                    {!imagePreview ? (
+                      <label 
+                        htmlFor="image-upload" 
+                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/10 rounded-lg bg-elevated/50 hover:bg-elevated hover:border-lime-500/30 transition-all cursor-pointer"
+                      >
+                        <div className="p-3 rounded-full bg-white/5 group-hover:scale-110 transition-transform">
+                           <Upload className="w-5 h-5 text-zinc-400 group-hover:text-lime-400" />
+                        </div>
+                        <span className="mt-2 text-xs text-zinc-500 group-hover:text-zinc-300">Click to upload image</span>
+                      </label>
+                    ) : (
+                      <div className="relative w-full h-48 rounded-lg overflow-hidden border border-white/10 group">
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 backdrop-blur-sm">
+                          <label htmlFor="image-upload" className="p-2 bg-white/10 rounded-full hover:bg-white/20 cursor-pointer text-white" title="Change Image">
+                            <ImageIcon className="w-5 h-5" />
+                          </label>
+                          <button 
+                            type="button" 
+                            onClick={clearImage} 
+                            className="p-2 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/30 transition-colors" 
+                            title="Remove Image"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -460,7 +550,6 @@ export default function CreateCampaignPage() {
                     disabled={isPending}
                     rows={5}
                     placeholder="Explain why you need funds and how the prediction market event aligns with your goals..."
-                    // Changed focus border/ring to lime
                     className={cn(
                       "w-full bg-elevated border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600 resize-none",
                       errors.description ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
@@ -493,21 +582,13 @@ export default function CreateCampaignPage() {
                         disabled={isPending}
                         error={errors.conditionId?.message}
                         onSelect={(market) => {
-                          // 1. Set Condition ID
                           field.onChange(market.conditionId);
-                          
-                          // 2. Set Question for Display
                           setValue('marketQuestion', market.question);
-                          
-                          // 3. Set Slug for Contract (Crucial!)
                           setValue('marketSlug', market.slug, { shouldValidate: true });
 
-                          // 4. Auto-fill deadline if market has an end date
                           if (market.endDate) {
                              const date = new Date(market.endDate);
-                             // Add 24 hours to market end date for campaign deadline logic
                              date.setHours(date.getHours() + 24);
-                             // Format for datetime-local input: YYYY-MM-DDTHH:mm
                              const isoString = date.toISOString().slice(0, 16);
                              setValue('deadline', isoString, { shouldValidate: true });
                           }
@@ -518,24 +599,19 @@ export default function CreateCampaignPage() {
                   <InputError message={errors.conditionId?.message} />
                   <InputError message={errors.marketSlug?.message} />
                   
-                  {/* Selected Market Display Widget */}
                   {watchedValues.marketQuestion && (
                     <motion.div 
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      // Changed Widget colors from blue to lime
                       className="mt-3 p-3 bg-lime-500/5 border border-lime-500/20 rounded-lg flex gap-3"
                     >
                       <div className="mt-1">
-                        {/* Icon color to lime */}
                         <Icons.Polymarket className="w-4 h-4 text-lime-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        {/* Label color to lime-200 */}
                         <p className="text-xs font-medium text-lime-200">Selected Event</p>
                         <p className="text-sm text-white mt-0.5 truncate">{watchedValues.marketQuestion}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          {/* Code color to lime-400/60 */}
                           <code className="text-[10px] font-mono text-lime-400/60 truncate max-w-[150px]">
                             {watchedValues.conditionId}
                           </code>
@@ -566,7 +642,6 @@ export default function CreateCampaignPage() {
                         {...register('goalAmount', { valueAsNumber: true })}
                         disabled={isPending}
                         placeholder="10000"
-                        // Changed focus border/ring to lime
                         className={cn(
                           "w-full bg-elevated border rounded-lg pl-4 pr-16 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
                           errors.goalAmount ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
@@ -587,7 +662,6 @@ export default function CreateCampaignPage() {
                         type="datetime-local"
                         {...register('deadline')}
                         disabled={isPending}
-                        // Changed focus border/ring to lime
                         className={cn(
                           "w-full bg-elevated border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600 scheme-dark",
                           errors.deadline ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
@@ -599,7 +673,6 @@ export default function CreateCampaignPage() {
                   </div>
                 </div>
 
-                {/* NEW IDENTITY VERIFY RECIPIENT SECTION */}
                 <div className="space-y-1">
                   <FormLabel required tooltip="The wallet that receives the USDC if the condition is met. Can be a Basename (name.base.eth).">Recipient Address</FormLabel>
                   <div className="relative">
@@ -609,18 +682,14 @@ export default function CreateCampaignPage() {
                         const newValue = e.target.value;
                         setRecipientInput(newValue);
                         
-                        // Immediately validate: if it's a raw valid address, set it right away
-                        // Otherwise, clear the form value and wait for IdentityVerify to resolve
                         if (newValue && isAddress(newValue)) {
                           setValue('recipient', newValue, { shouldValidate: true });
                         } else {
-                          // Clear the form value - will be set by IdentityVerify if it resolves
                           setValue('recipient', '', { shouldValidate: true });
                         }
                       }}
                       disabled={isPending}
                       placeholder="0x... or name.base.eth"
-                      // Changed focus border/ring to lime
                       className={cn(
                         "w-full bg-elevated border rounded-lg pl-10 pr-24 py-3 text-sm font-mono text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
                         errors.recipient ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
@@ -642,7 +711,6 @@ export default function CreateCampaignPage() {
                     )}
                   </div>
                   
-                  {/* THE MAGIC IDENTITY COMPONENT */}
                   <IdentityVerify 
                     input={recipientInput}
                     onResolved={(validAddress) => {
@@ -718,7 +786,6 @@ export default function CreateCampaignPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-mono uppercase text-zinc-500 tracking-widest">Live Preview</h3>
                 <div className="flex gap-1.5">
-                  {/* Kept green as standard "Online" indicator, could change to lime-500 if desired */}
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   <span className="text-[10px] text-zinc-400">Updating</span>
                 </div>
@@ -729,12 +796,16 @@ export default function CreateCampaignPage() {
                 className="bg-[#111113] border border-white/10 rounded-xl overflow-hidden shadow-2xl shadow-black/50 backdrop-blur-xl"
                 layout
               >
-                {/* Card Header Image Placeholder */}
-                <div className="h-32 bg-linear-to-br from-zinc-800 to-elevated relative p-6 flex flex-col justify-end border-b border-white/5">
-                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-                  <div className="relative z-10">
+                {/* UPDATED: Card Header Image Logic */}
+                <div className="h-32 relative bg-linear-to-br from-zinc-800 to-elevated border-b border-white/5">
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Campaign Cover" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+                  )}
+                  
+                  <div className="absolute bottom-4 left-4 right-4 z-10">
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 border border-white/10 text-[10px] text-white backdrop-blur-md">
-                      {/* Changed indicator dot to lime */}
                       <div className="w-1.5 h-1.5 rounded-full bg-lime-500" />
                       Conditional Funding
                     </span>
@@ -764,7 +835,6 @@ export default function CreateCampaignPage() {
 
                   {/* The "IF" Logic Block */}
                   <div className="bg-surface border border-white/5 rounded-lg p-4 relative overflow-hidden group">
-                    {/* Changed side strip to lime */}
                     <div className="absolute top-0 left-0 w-1 h-full bg-lime-500" />
                     <div className="flex items-center justify-between mb-2">
                        <div className="flex items-center gap-2">
@@ -776,20 +846,17 @@ export default function CreateCampaignPage() {
                            href={`https://polymarket.com/event/${watchedValues.marketSlug}`} 
                            target="_blank"
                            rel="noreferrer"
-                           // Changed link color to lime
                            className="text-[10px] text-lime-500 hover:text-lime-400 flex items-center gap-1"
                          >
                            View on Polymarket <ArrowRight className="w-2.5 h-2.5" />
                          </a>
                        )}
                     </div>
-                    {/* Changed Question text to lime-100 */}
                     <p className="text-sm text-lime-100 font-medium">
                       {watchedValues.marketQuestion || "Select a prediction market..."}
                     </p>
                     <div className="mt-3 flex items-center gap-2 text-[10px] text-zinc-500">
                       <span>Outcome:</span>
-                      {/* Kept green here as it represents "Yes" specifically, but could be lime if preferred */}
                       <span className="px-1.5 py-0.5 bg-green-500/10 text-green-400 rounded border border-green-500/20 font-bold">YES</span>
                     </div>
                   </div>

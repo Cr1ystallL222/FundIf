@@ -2,16 +2,29 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, LayoutGroup, Variants } from "framer-motion";
+import { usePublicClient } from 'wagmi';
+import { parseAbiItem, formatUnits } from 'viem';
+import { baseSepolia } from 'viem/chains';
 
 /* ==================================================================================
-   1. DESIGN SYSTEM & ANIMATION CONFIG
+   1. BLOCKCHAIN CONFIG & ABI
    ================================================================================== */
 
-// FIX: Added 'as const' so TypeScript knows "spring" is a specific literal, not just a string.
+const CAMPAIGN_FACTORY_ADDRESS = '0x8f77070E6641F59C59C8c502De68E58AF0f7fa43';
+
+// We only need the Event ABI to fetch the feed efficiently
+const CAMPAIGN_CREATED_EVENT = parseAbiItem(
+  'event CampaignCreated(address indexed campaign, address indexed creator, string title, uint256 goalAmount, bytes32 conditionId, string marketSlug, uint256 deadline)'
+);
+
+/* ==================================================================================
+   2. DESIGN SYSTEM & ANIMATION CONFIG
+   ================================================================================== */
+
 const LAYOUT_TRANSITION = {
   type: "spring",
-  stiffness: 70,  // Lower stiffness = looser, slower movement
-  damping: 20,    // Higher damping = less oscillation
+  stiffness: 70,
+  damping: 20,
   mass: 1.2
 } as const;
 
@@ -58,17 +71,17 @@ const cardVariants: Variants = {
 };
 
 /* ==================================================================================
-   2. TYPES & MOCK DATA
+   3. TYPES & MOCK DATA
    ================================================================================== */
 
-type CampaignStatus = "live" | "funded" | "ended";
+type CampaignStatus = "live" | "funded" | "ended" | "expired";
 
 interface Campaign {
   id: string;
   title: string;
   description: string;
   outcome: string;
-  probability: number; // 0 to 100
+  probability: number;
   raised: number;
   goal: number;
   backers: number;
@@ -77,18 +90,23 @@ interface Campaign {
   imageUrl: string;
   chartData: number[];
   polymarketUrl: string;
+  isVerified: boolean;
+  isCaution: boolean;
+  isOnChain: boolean; // To distinguish real vs mock
 }
 
 const CATEGORIES = [
   { id: "tech", label: "Deep Tech" },
   { id: "politics", label: "Politics" },
+  { id: "public_goods", label: "Public Goods" },
   { id: "climate", label: "Climate" },
+  { id: "defense", label: "Defense/Sec" },
   { id: "social", label: "Social Cause" },
   { id: "ai", label: "AI Safety" },
+  { id: "governance", label: "Governance" },
+  { id: "bio", label: "Bio/Acc" },
   { id: "urban", label: "Urbanism" },
   { id: "crypto", label: "Protocol" },
-  { id: "science", label: "Science" },
-  { id: "charity", label: "Charity" },
 ];
 
 const generateChartData = (trend: 'up' | 'down' | 'volatile') => {
@@ -104,7 +122,7 @@ const generateChartData = (trend: 'up' | 'down' | 'volatile') => {
 
 const MOCK_CAMPAIGNS: Campaign[] = [
   {
-    id: "1",
+    id: "mock-1",
     title: "Stratospheric Aerosol Shield",
     description: "Deploying reflective sulfur particles. Funds released if global temp rises >1.5°C.",
     outcome: "Temp > 1.5°C",
@@ -116,10 +134,13 @@ const MOCK_CAMPAIGNS: Campaign[] = [
     tags: ["climate", "tech"],
     imageUrl: "https://images.unsplash.com/photo-1534274988754-0d05dd580df8?auto=format&fit=crop&q=80&w=800",
     chartData: generateChartData('up'),
-    polymarketUrl: "#"
+    polymarketUrl: "#",
+    isVerified: true,
+    isCaution: false,
+    isOnChain: false,
   },
   {
-    id: "2",
+    id: "mock-2",
     title: "City Center Car-Free Zone",
     description: "Lobbying and infrastructure plan for downtown pedestrianization. Conditional on city council vote.",
     outcome: "Measure B Passes",
@@ -131,11 +152,14 @@ const MOCK_CAMPAIGNS: Campaign[] = [
     tags: ["urban", "politics"],
     imageUrl: "https://images.unsplash.com/photo-1517231925375-bf2cb42917a5?auto=format&fit=crop&q=80&w=800",
     chartData: generateChartData('up'),
-    polymarketUrl: "#"
+    polymarketUrl: "#",
+    isVerified: true,
+    isCaution: false,
+    isOnChain: false,
   },
   {
-    id: "3",
-    title: "Legal Defense Fund: Crypto Privacy",
+    id: "mock-3",
+    title: "Legal Defense: Crypto Privacy",
     description: "Support for developers facing regulatory action. Funds unlocked if charges are formally filed.",
     outcome: "Indictment Filed",
     probability: 25,
@@ -143,13 +167,16 @@ const MOCK_CAMPAIGNS: Campaign[] = [
     goal: 1000000,
     backers: 3200,
     status: "funded",
-    tags: ["crypto", "politics", "social"],
+    tags: ["crypto", "politics", "defense"],
     imageUrl: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=800",
     chartData: generateChartData('down'),
-    polymarketUrl: "#"
+    polymarketUrl: "#",
+    isVerified: true,
+    isCaution: true,
+    isOnChain: false,
   },
   {
-    id: "4",
+    id: "mock-4",
     title: "Mars Habitat Alpha",
     description: "Prototype inflatable habitat. Contingent on Starship reaching stable orbit before Q3.",
     outcome: "Orbital Success",
@@ -158,13 +185,16 @@ const MOCK_CAMPAIGNS: Campaign[] = [
     goal: 800000,
     backers: 3200,
     status: "live",
-    tags: ["tech", "science"],
+    tags: ["tech", "public_goods"],
     imageUrl: "https://images.unsplash.com/photo-1614728853911-1e605289cc29?auto=format&fit=crop&q=80&w=800",
     chartData: generateChartData('up'),
-    polymarketUrl: "#"
+    polymarketUrl: "#",
+    isVerified: true,
+    isCaution: false,
+    isOnChain: false,
   },
   {
-    id: "5",
+    id: "mock-5",
     title: "Universal Flu Vaccine Trial",
     description: "Funding Phase 2 trials for a mosaic antigen vaccine. Escrow released upon FDA trial approval.",
     outcome: "FDA Approval",
@@ -173,30 +203,18 @@ const MOCK_CAMPAIGNS: Campaign[] = [
     goal: 900000,
     backers: 405,
     status: "live",
-    tags: ["science", "charity"],
+    tags: ["bio", "public_goods"],
     imageUrl: "https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=800",
     chartData: generateChartData('down'),
-    polymarketUrl: "#"
-  },
-  {
-    id: "6",
-    title: "Swing State Voter Reg",
-    description: "Non-partisan registration drive in PA/MI. Conditional on polling spread <2% in October.",
-    outcome: "Poll Spread <2%",
-    probability: 78,
-    raised: 210000,
-    goal: 250000,
-    backers: 5100,
-    status: "live",
-    tags: ["politics", "charity"],
-    imageUrl: "https://images.unsplash.com/photo-1540910419868-474947cebacb?auto=format&fit=crop&q=80&w=800",
-    chartData: generateChartData('volatile'),
-    polymarketUrl: "#"
+    polymarketUrl: "#",
+    isVerified: false,
+    isCaution: true,
+    isOnChain: false,
   },
 ];
 
 /* ==================================================================================
-   3. COMPONENTS
+   4. COMPONENTS
    ================================================================================== */
 
 // --- Icons ---
@@ -216,19 +234,28 @@ const Icons = {
   ExternalLink: ({ className }: { className?: string }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
   ),
+  Shield: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg>
+  ),
+  Caution: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+  ),
+  ChevronDown: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>
+  ),
 };
 
-// --- Typewriter Effect (Slower) ---
+// --- Typewriter Effect ---
 const Typewriter = () => {
-  const words = ["Probability.", "Future.", "World.", "Impossible."];
+  const words = ["Moonshot.", "Impossible.", "Future.", "Inevitable."];
   const [text, setText] = useState("");
   const [wordIndex, setWordIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   
   useEffect(() => {
     const currentWord = words[wordIndex];
-    const typeSpeed = isDeleting ? 75 : 150; // Slower typing
-    const delay = isDeleting ? 0 : 2500; // Longer pause on full word
+    const typeSpeed = isDeleting ? 100 : 200; // Slower
+    const delay = isDeleting ? 0 : 3000; // Longer pause
 
     const timeout = setTimeout(() => {
       if (!isDeleting && text === currentWord) {
@@ -279,11 +306,66 @@ const StatusBadge = ({ status }: { status: CampaignStatus }) => {
     live: "bg-emerald-500 text-black border-emerald-400",
     funded: "bg-blue-500 text-white border-blue-400",
     ended: "bg-zinc-600 text-white border-zinc-500",
+    expired: "bg-red-500/20 text-red-400 border-red-500/30",
   };
 
   return (
     <div className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${styles[status]} shadow-lg`}>
       {status}
+    </div>
+  );
+};
+
+// --- Filter Dropdown ---
+const FilterDropdown = ({ 
+  value, 
+  onChange 
+}: { 
+  value: 'live' | 'completed'; 
+  onChange: (v: 'live' | 'completed') => void 
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="relative h-full flex items-center pr-2">
+      <div className="w-px h-8 bg-zinc-800 mr-3" />
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900/50 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all"
+      >
+        {value === 'live' ? 'Active' : 'Completed'}
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
+          <Icons.ChevronDown className="w-3 h-3" />
+        </motion.div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute top-full right-2 mt-2 w-32 bg-[#111113] border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-50"
+          >
+            <div className="p-1">
+              {['live', 'completed'].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => {
+                    onChange(option as any);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    value === option ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+                  }`}
+                >
+                  {option === 'live' ? 'Active' : 'Completed'}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -300,7 +382,6 @@ const CampaignCard = ({ data }: { data: Campaign }) => {
   };
 
   const probColor = getProbColor(data.probability);
-  // Format specifically (e.g. $452,120)
   const formatMoney = (n: number) => `$${n.toLocaleString()}`;
 
   return (
@@ -319,8 +400,27 @@ const CampaignCard = ({ data }: { data: Campaign }) => {
           alt={data.title}
           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out opacity-80 group-hover:opacity-100"
         />
-        <div className="absolute top-3 left-3 z-20">
+        <div className="absolute top-3 left-3 z-20 flex gap-2">
           <StatusBadge status={data.status} />
+          {data.isOnChain && (
+            <div className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-purple-500/20 text-purple-300 border-purple-500/30 backdrop-blur-md">
+              On-Chain
+            </div>
+          )}
+        </div>
+        
+        {/* Verification / Caution Badges */}
+        <div className="absolute top-3 right-3 z-20 flex gap-1">
+          {data.isVerified && (
+            <div className="bg-blue-500 text-white p-1 rounded-full shadow-lg" title="Verified Creator">
+              <Icons.Shield className="w-3.5 h-3.5" />
+            </div>
+          )}
+          {data.isCaution && (
+            <div className="bg-yellow-500 text-black p-1 rounded-full shadow-lg" title="Experimental Market">
+              <Icons.Caution className="w-3.5 h-3.5" />
+            </div>
+          )}
         </div>
       </div>
 
@@ -329,10 +429,10 @@ const CampaignCard = ({ data }: { data: Campaign }) => {
         
         {/* Title */}
         <div className="mb-4">
-          <h3 className="text-lg font-bold text-white leading-tight group-hover:text-blue-400 transition-colors mb-2">
+          <h3 className="text-lg font-bold text-white leading-tight group-hover:text-blue-400 transition-colors mb-2 line-clamp-2">
             {data.title}
           </h3>
-          <p className="text-sm text-zinc-500 leading-relaxed line-clamp-2 mb-4">
+          <p className="text-sm text-zinc-500 leading-relaxed line-clamp-2 mb-4 h-10">
             {data.description}
           </p>
           
@@ -347,6 +447,8 @@ const CampaignCard = ({ data }: { data: Campaign }) => {
             </div>
             <a 
               href={data.polymarketUrl} 
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-zinc-500 hover:text-blue-400 transition-colors flex-shrink-0"
               title="View market source"
             >
@@ -355,7 +457,7 @@ const CampaignCard = ({ data }: { data: Campaign }) => {
           </div>
         </div>
 
-        {/* 3. Funding Progress (Big & Clear) */}
+        {/* 3. Funding Progress */}
         <div className="mt-auto mb-6">
           <div className="flex justify-between items-end mb-2">
              <div className="flex flex-col">
@@ -408,12 +510,85 @@ const CampaignCard = ({ data }: { data: Campaign }) => {
 };
 
 /* ==================================================================================
-   4. PAGE COMPONENT
+   5. DATA HOOKS (REAL + MOCK MERGE)
+   ================================================================================== */
+
+const useCampaignsFeed = () => {
+  const publicClient = usePublicClient({ chainId: baseSepolia.id });
+  const [realCampaigns, setRealCampaigns] = useState<Campaign[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOnChainCampaigns = async () => {
+      if (!publicClient) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const logs = await publicClient.getLogs({
+          address: CAMPAIGN_FACTORY_ADDRESS,
+          event: CAMPAIGN_CREATED_EVENT,
+          fromBlock: 'earliest',
+        });
+
+        // Transform logs into Campaign objects
+        const formatted: Campaign[] = logs.map((log, index) => {
+          const { args } = log;
+          const goal = args.goalAmount ? parseFloat(formatUnits(args.goalAmount, 6)) : 0;
+          
+          // Generate a deterministic pseudo-random probability based on address/slug
+          const pseudoRandomProb = (args.marketSlug?.length || 50) % 100;
+
+          return {
+            id: `onchain-${args.campaign}-${index}`,
+            title: args.title || "Untitled Campaign",
+            description: `A community-created prediction market campaign on Base. Market ID: ${args.marketSlug}`,
+            outcome: args.marketSlug || "Unspecified Outcome",
+            probability: pseudoRandomProb, // In prod, fetch from Polymarket API
+            raised: 0, // In prod, fetch balance of campaign address
+            goal: goal,
+            backers: 0, // In prod, fetch events from campaign
+            status: "live",
+            tags: ["crypto", "public_goods"], // Default tags
+            imageUrl: `https://images.unsplash.com/photo-${1550000000000 + index}?auto=format&fit=crop&q=80&w=800`, // Random image fallback
+            chartData: generateChartData('volatile'),
+            polymarketUrl: `https://polymarket.com/event/${args.marketSlug}`,
+            isVerified: false,
+            isCaution: true, // New on-chain campaigns are cautious by default
+            isOnChain: true,
+          };
+        });
+
+        setRealCampaigns(formatted.reverse()); // Newest first
+      } catch (error) {
+        console.error("Failed to fetch campaigns:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOnChainCampaigns();
+  }, [publicClient]);
+
+  // Merge Real + Mock
+  const allCampaigns = useMemo(() => {
+    return [...realCampaigns, ...MOCK_CAMPAIGNS];
+  }, [realCampaigns]);
+
+  return { campaigns: allCampaigns, isLoading };
+};
+
+/* ==================================================================================
+   6. MAIN PAGE COMPONENT
    ================================================================================== */
 
 export default function Explore() {
+  const { campaigns, isLoading } = useCampaignsFeed();
+  
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<'live' | 'completed'>('live');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -433,17 +608,26 @@ export default function Explore() {
   const clearFilters = () => {
     setSelectedTags(new Set());
     setSearch("");
+    setStatusFilter('live');
   };
 
+  // Filter Logic
   const filteredData = useMemo(() => {
-    return MOCK_CAMPAIGNS.filter(c => {
+    return campaigns.filter(c => {
       const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase()) || 
                             c.outcome.toLowerCase().includes(search.toLowerCase());
+      
       const matchesTags = selectedTags.size === 0 || 
                           c.tags.some(t => selectedTags.has(t));
-      return matchesSearch && matchesTags;
+      
+      // Simple status check logic
+      const matchesStatus = statusFilter === 'live' 
+        ? (c.status === 'live' || c.status === 'funded')
+        : (c.status === 'ended' || c.status === 'expired');
+
+      return matchesSearch && matchesTags && matchesStatus;
     });
-  }, [search, selectedTags]);
+  }, [search, selectedTags, statusFilter, campaigns]);
 
   if (!isMounted) return null;
 
@@ -475,26 +659,37 @@ export default function Explore() {
         {/* SEARCH & FILTERS */}
         <div className="sticky top-6 z-40 mb-12">
           <div className="relative group">
-            {/* Search Input */}
-            <div className="relative z-10">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            {/* Search Input Bar */}
+            <div className="relative z-10 flex items-center bg-[#09090b]/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl focus-within:border-white focus-within:ring-4 focus-within:ring-white/10 focus-within:shadow-[0_0_40px_rgba(255,255,255,0.15)] transition-all duration-300">
+              
+              {/* Left Icon */}
+              <div className="pl-4 flex items-center pointer-events-none">
                 <Icons.Search className="h-5 w-5 text-zinc-500 group-focus-within:text-white transition-colors" />
               </div>
+              
+              {/* Input Field */}
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="block w-full pl-11 pr-4 py-4 bg-[#09090b]/90 backdrop-blur-xl border border-white/10 rounded-xl text-zinc-100 placeholder-zinc-500 focus:placeholder-zinc-100 focus:border-white focus:ring-4 focus:ring-white/10 focus:shadow-[0_0_40px_rgba(255,255,255,0.15)] focus:outline-none transition-all duration-300 shadow-2xl"
+                className="w-full pl-3 pr-4 py-4 bg-transparent text-zinc-100 placeholder-zinc-500 focus:placeholder-zinc-100 focus:outline-none"
                 placeholder="What do you believe in?"
               />
-              {search && (
-                <button 
-                  onClick={() => setSearch("")}
-                  className="absolute inset-y-0 right-4 flex items-center text-zinc-500 hover:text-white"
-                >
-                  <Icons.Close className="w-4 h-4" />
-                </button>
-              )}
+
+              {/* Right Side Controls */}
+              <div className="flex items-center h-full py-1.5">
+                {search && (
+                  <button 
+                    onClick={() => setSearch("")}
+                    className="mr-2 p-1 text-zinc-500 hover:text-white rounded-full hover:bg-zinc-800 transition-colors"
+                  >
+                    <Icons.Close className="w-4 h-4" />
+                  </button>
+                )}
+                
+                {/* Status Filter Dropdown */}
+                <FilterDropdown value={statusFilter} onChange={setStatusFilter} />
+              </div>
             </div>
 
             {/* Filter Toggles */}
@@ -515,7 +710,7 @@ export default function Explore() {
                       animate={{ opacity: 1, scale: 1 }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }} // Less bounce
                       className={`
                         relative px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-2
                         ${isSelected 
@@ -529,7 +724,7 @@ export default function Explore() {
                   );
                 })}
                 
-                {(selectedTags.size > 0 || search) && (
+                {(selectedTags.size > 0 || search || statusFilter !== 'live') && (
                    <motion.button
                      initial={{ opacity: 0, width: 0 }}
                      animate={{ opacity: 1, width: "auto" }}
@@ -547,37 +742,45 @@ export default function Explore() {
 
         {/* CAMPAIGN GRID */}
         <div className="min-h-[400px]">
-          <LayoutGroup>
-            <motion.div 
-              layout
-              transition={LAYOUT_TRANSITION}
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              <AnimatePresence mode="popLayout">
-                {filteredData.length > 0 ? (
-                  filteredData.map((campaign) => (
-                    <CampaignCard key={campaign.id} data={campaign} />
-                  ))
-                ) : (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="col-span-full py-20 text-center"
-                  >
-                    <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
-                      <Icons.Search className="w-6 h-6 text-zinc-600" />
-                    </div>
-                    <h3 className="text-zinc-300 font-medium">No timelines found.</h3>
-                    <p className="text-zinc-500 text-sm mt-1">Try adjusting your filters or search criteria.</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </LayoutGroup>
+          {isLoading ? (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1,2,3].map(i => (
+                  <div key={i} className="h-96 rounded-2xl bg-white/5 animate-pulse" />
+                ))}
+             </div>
+          ) : (
+            <LayoutGroup>
+              <motion.div 
+                layout
+                transition={LAYOUT_TRANSITION}
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                <AnimatePresence mode="popLayout">
+                  {filteredData.length > 0 ? (
+                    filteredData.map((campaign) => (
+                      <CampaignCard key={campaign.id} data={campaign} />
+                    ))
+                  ) : (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="col-span-full py-20 text-center"
+                    >
+                      <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                        <Icons.Search className="w-6 h-6 text-zinc-600" />
+                      </div>
+                      <h3 className="text-zinc-300 font-medium">No timelines found.</h3>
+                      <p className="text-zinc-500 text-sm mt-1">Try adjusting your filters or search criteria.</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </LayoutGroup>
+          )}
         </div>
 
       </div>

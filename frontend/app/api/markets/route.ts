@@ -108,34 +108,56 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')?.trim() || '';
     const limitParam = parseInt(searchParams.get('limit') || '', 10);
     const limit = Math.min(
-      isNaN(limitParam) ? 200 : limitParam,  // Default: 50 → 200
-      1000  // Max cap: 100 → 500
+      isNaN(limitParam) ? 2000 : limitParam,  // Default: 50 → 200
+      10000  // Max cap: 100 → 500
     );
 
+    let events: PolymarketEvent[] = [];
+
+if (search) {
+  // When searching: fetch multiple pages to find relevant markets
+  const pagesToFetch = 5; // 5 pages × 500 = 2500 events searched
+  
+  for (let offset = 0; offset < pagesToFetch * 500; offset += 500) {
     const apiUrl = new URL(`${POLYMARKET_GAMMA_API}/events`);
     apiUrl.searchParams.set('active', 'true');
     apiUrl.searchParams.set('closed', 'false');
-
-    if (search) {
-      // When searching: fetch MORE results and let API handle relevance
-      apiUrl.searchParams.set('limit', '500');
-      apiUrl.searchParams.set('q', search);
-      // Don't order by volume - it filters out relevant but low-volume markets
-    } else {
-      // When browsing (no search): show popular markets
-      apiUrl.searchParams.set('limit', String(limit));
-      apiUrl.searchParams.set('order', 'volume24hr');
-      apiUrl.searchParams.set('ascending', 'false');
-    }
-
-    const response = await fetch(apiUrl.toString(), {
+    apiUrl.searchParams.set('limit', '500');
+    apiUrl.searchParams.set('offset', String(offset));
+    apiUrl.searchParams.set('q', search);
+    
+    const res = await fetch(apiUrl.toString(), {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'NextJS-Polymarket-Proxy/1.0',
       },
-      next: {
-        revalidate: CACHE_TTL,
-        tags: ['polymarket-markets'],
+      next: { revalidate: CACHE_TTL },
+    });
+    
+    if (!res.ok) break;
+    
+    const pageEvents: PolymarketEvent[] = await res.json();
+    if (pageEvents.length === 0) break;
+    
+    events = [...events, ...pageEvents];
+  }
+} else {
+  // When browsing (no search): show popular markets
+  const apiUrl = new URL(`${POLYMARKET_GAMMA_API}/events`);
+  apiUrl.searchParams.set('active', 'true');
+  apiUrl.searchParams.set('closed', 'false');
+  apiUrl.searchParams.set('limit', String(limit));
+  apiUrl.searchParams.set('order', 'volume24hr');
+  apiUrl.searchParams.set('ascending', 'false');
+  
+  const response = await fetch(apiUrl.toString(), {
+      headers: {
+       'Accept': 'application/json',
+       'User-Agent': 'NextJS-Polymarket-Proxy/1.0',
+      },
+     next: {
+       revalidate: CACHE_TTL,
+       tags: ['polymarket-markets'],
       },
     });
 
@@ -143,7 +165,8 @@ export async function GET(request: Request) {
       throw new Error(`Polymarket API error: ${response.status}`);
     }
 
-    const events: PolymarketEvent[] = await response.json();
+    events = await response.json();
+    }
     const markets: CleanMarket[] = [];
     const searchLower = search.toLowerCase();
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   useAccount, 
   useReadContract, 
@@ -11,16 +10,11 @@ import {
 import { useCapabilities, useWriteContracts } from 'wagmi/experimental';
 import { parseUnits, formatUnits, type Address } from 'viem';
 import { baseSepolia } from 'viem/chains';
-
-// NEW: Direct Icon Imports (Fixes the Crash)
 import { 
   Zap, 
   Wallet, 
-  Check, 
-  Lock, 
-  ArrowRight, 
-  AlertCircle, 
-  Loader2 
+  Loader2, 
+  ShieldCheck 
 } from 'lucide-react';
 
 import { USDC_ADDRESS } from '@/lib/contracts/addresses';
@@ -31,7 +25,7 @@ const PAYMASTER_URL = process.env.NEXT_PUBLIC_PAYMASTER_URL;
 
 interface FundFormProps {
   campaignAddress: string;
-  onSuccess?: () => void;
+  onSuccess?: () => void; // Pass your 'refetchCampaign' function here
 }
 
 export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
@@ -56,34 +50,57 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
     args: address ? [address, campaignAddr] : undefined,
   });
 
-  // --- 2. PAYMASTER / BATCHING SETUP ---
-  const { data: capabilities } = useCapabilities({
-    account: address,
-  });
-
+  // --- 2. PAYMASTER SETUP ---
+  const { data: capabilities } = useCapabilities({ account: address });
   const chainId = chain?.id || baseSepolia.id;
   const availableCapabilities = capabilities?.[chainId];
   const hasPaymaster = !!availableCapabilities?.paymasterService?.supported;
 
+  // --- 3. WRITE HOOKS ---
   const { 
     writeContracts, 
-    data: batchId, 
-    isPending: isBatchPending,
+    isPending: isBatchPending, 
     isSuccess: isBatchSuccess 
   } = useWriteContracts();
 
-  // --- 3. FALLBACK WRITES ---
-  const { writeContract: writeApprove, isPending: isApprovePending } = useWriteContract();
-  const { writeContract: writeFund, isPending: isFundPending } = useWriteContract();
+  const { 
+    writeContract: writeFund, 
+    isPending: isFundPending,
+    data: fundTxHash 
+  } = useWriteContract();
 
-  // --- MATH ---
+  const { 
+    writeContract: writeApprove, 
+    isPending: isApprovePending 
+  } = useWriteContract();
+
+  // Wait for standard TX receipts to trigger refresh
+  const { isSuccess: isFundTxSuccess } = useWaitForTransactionReceipt({ hash: fundTxHash });
+
+  // --- 4. AUTO-REFRESH LOGIC (The Fix) ---
+  useEffect(() => {
+    if (isBatchSuccess || isFundTxSuccess) {
+      // 1. Clear Input
+      setAmount('');
+      // 2. Refresh User Balance & Allowance
+      refetchBalance();
+      refetchAllowance();
+      // 3. Refresh Parent Data (Total Funded, etc)
+      if (onSuccess) {
+        setTimeout(() => onSuccess(), 1000); // Small delay to allow RPC to update
+      }
+    }
+  }, [isBatchSuccess, isFundTxSuccess, refetchBalance, refetchAllowance, onSuccess]);
+
+
+  // --- MATH & LOGIC ---
   const parsedAmount = useMemo(() => {
     try { return amount ? parseUnits(amount, USDC_DECIMALS) : 0n; } catch { return 0n; }
   }, [amount]);
 
-  const currentAllowance = allowance ?? 0n;
+  const needsApproval = parsedAmount > (allowance ?? 0n);
   const isInsufficientBalance = (balance ?? 0n) < parsedAmount;
-  const needsApproval = parsedAmount > currentAllowance;
+  const isLoading = isBatchPending || isApprovePending || isFundPending;
 
   // --- HANDLERS ---
   const handleGaslessSubmit = () => {
@@ -107,7 +124,7 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
       contracts,
       capabilities: {
         paymasterService: {
-          url: PAYMASTER_URL || ''
+          url: PAYMASTER_URL || '' // Fixed the undefined error
         }
       }
     });
@@ -131,79 +148,74 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
     }
   };
 
-  const getButtonText = () => {
-    if (isInsufficientBalance) return 'Insufficient Balance';
-    if (isBatchPending) return 'Processing Gasless Tx...';
-    if (hasPaymaster) return 'Fund (Gasless & One-Click)';
-    if (isApprovePending) return 'Approving...';
-    if (isFundPending) return 'Funding...';
-    if (needsApproval) return 'Approve USDC';
-    return 'Fund Campaign';
-  };
-
-  const formattedBalance = balance ? formatUnits(balance, USDC_DECIMALS) : '0';
-  const isLoading = isBatchPending || isApprovePending || isFundPending;
-
   if (!isConnected) {
     return (
-      <div className="p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/10 text-center">
-        <Wallet className="w-5 h-5 mx-auto mb-2 text-yellow-500" />
-        <p className="text-sm text-yellow-200 font-medium">Connect Wallet to Fund</p>
+      <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900 text-center">
+        <Wallet className="w-5 h-5 mx-auto mb-2 text-zinc-500" />
+        <p className="text-sm text-zinc-400 font-medium">Connect Wallet to Fund</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Input Area */}
       <div className="relative group">
-        <div className="flex justify-between mb-2 text-xs text-zinc-400">
-          <span>Amount</span>
-          <span>Balance: {formattedBalance}</span>
+        <div className="flex justify-between mb-2 text-xs text-zinc-500 font-medium">
+          <span>AMOUNT</span>
+          <span>BALANCE: {balance ? formatUnits(balance, USDC_DECIMALS) : '0'}</span>
         </div>
-        <input
-          type="text"
-          inputMode="decimal"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-4 pr-16 py-4 text-xl font-mono text-white focus:outline-none focus:border-blue-500 transition-colors"
-        />
-        <div className="absolute right-4 top-10 -translate-y-1/2 text-zinc-400 font-bold text-sm">USDC</div>
+        <div className="relative">
+            <input
+            type="text"
+            inputMode="decimal"
+            placeholder="0"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-4 pr-16 py-4 text-3xl font-bold text-white focus:outline-none focus:border-white/20 transition-colors placeholder:text-zinc-700"
+            />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm">USDC</div>
+        </div>
       </div>
 
-      {/* FUND BUTTON */}
-      <button
-        onClick={hasPaymaster ? handleGaslessSubmit : handleStandardSubmit}
-        disabled={!isConnected || isInsufficientBalance || isLoading}
-        className={`w-full h-14 rounded-xl font-bold text-lg shadow-lg transition-all flex flex-col items-center justify-center ${
-          hasPaymaster 
-            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-500/25'
-            : 'bg-zinc-800 hover:bg-zinc-700 text-white'
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          {/* Fixed Icons */}
-          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-             hasPaymaster ? <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" /> : <Wallet className="w-5 h-5" />
-          )}
-          {getButtonText()}
-        </div>
-        
-        {/* SUBTEXT FLEX */}
-        {hasPaymaster && !isLoading && (
-          <span className="text-[10px] opacity-90 font-medium tracking-wider uppercase mt-0.5">
-            Network Cost: <span className="text-green-300">Sponsored</span>
-          </span>
-        )}
-      </button>
+      <div className="space-y-3">
+        {/* MAIN BUTTON */}
+        <button
+            onClick={hasPaymaster ? handleGaslessSubmit : handleStandardSubmit}
+            disabled={isInsufficientBalance || isLoading || !amount}
+            className={`w-full h-14 rounded-xl font-bold text-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2
+            ${isInsufficientBalance || !amount
+                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                : 'bg-white text-black hover:bg-zinc-200 shadow-[0_0_20px_rgba(255,255,255,0.1)]'
+            }`}
+        >
+            {isLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+            <span>Fund Campaign</span>
+            )}
+        </button>
 
-      {/* Explainer */}
-      {hasPaymaster && (
-        <div className="text-center text-xs text-zinc-500">
-          Using <b>Coinbase Smart Wallet</b> • Batch Transactions Enabled
-        </div>
-      )}
+        {/* GASLESS BADGE / INFO */}
+        {hasPaymaster && (
+            <div className="flex items-center justify-center gap-2 text-xs">
+                <Zap className="w-3 h-3 text-blue-400 fill-blue-400 animate-pulse" />
+                <span className="font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    GASLESS TRANSACTION
+                </span>
+                <span className="text-zinc-600">•</span>
+                <span className="text-zinc-500">Powered by Paymaster</span>
+            </div>
+        )}
+        
+        {/* Standard Backup Text */}
+        {!hasPaymaster && (
+            <div className="flex items-center justify-center gap-1 text-xs text-zinc-500">
+                <ShieldCheck className="w-3 h-3" />
+                <span>Escrow Secured</span>
+            </div>
+        )}
+      </div>
     </div>
   );
 }

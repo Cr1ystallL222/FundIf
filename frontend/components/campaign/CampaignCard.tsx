@@ -174,15 +174,15 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
   const deadline = contractData?.[4].result as bigint;
   const recipient = contractData?.[5].result as Address;
   const resolved = contractData?.[6].result as boolean;
-  const conditionId = contractData?.[7].result as string;
-  const contractSlug = contractData?.[8].result as string; // Rename to distinguish from API slug
+  const conditionId = contractData?.[7].result as `0x${string}` | undefined;
+  const contractSlug = contractData?.[8].result as string | undefined;
 
   // --- B. Polymarket Data State ---
   const [marketData, setMarketData] = useState<{
     question: string;
     probability: number;
     found: boolean;
-    slug: string; // Store the slug found from API
+    slug: string;
   } | null>(null);
   
   const [isMarketLoading, setIsMarketLoading] = useState(false);
@@ -190,53 +190,151 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
   // --- C. Fetch Polymarket Data ---
   useEffect(() => {
     const fetchMarket = async () => {
-      if (!conditionId) return;
+      // Check for zero condition ID (invalid)
+      const ZERO_CONDITION_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const isValidConditionId = conditionId && conditionId !== ZERO_CONDITION_ID && conditionId !== '0x';
+      
+      // Debug logging (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[CampaignCard] Fetching market data:', {
+          conditionId,
+          isValidConditionId,
+          contractSlug,
+          hasConditionId: !!conditionId,
+          hasSlug: !!contractSlug
+        });
+      }
+      
+      // Need at least a slug or valid ID to work with
+      if (!isValidConditionId && !contractSlug) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[CampaignCard] No valid conditionId or slug to fetch market');
+        }
+        setMarketData({ question: "", probability: 0, found: false, slug: "" });
+        return;
+      }
 
       setIsMarketLoading(true);
       try {
         let targetMarket = null;
         let foundSlug = contractSlug || "";
 
-        // STRATEGY 1: Try fetching by Slug (Events endpoint)
-        // This gives us the best metadata (title, etc)
-        if (foundSlug) {
-          const response = await fetch(`https://gamma-api.polymarket.com/events?slug=${foundSlug}`);
-          const data = await response.json();
-          
-          if (Array.isArray(data) && data.length > 0) {
-            const event = data[0];
-            if (event.markets) {
-              targetMarket = event.markets.find((m: any) => m.conditionId === conditionId) 
-                             || event.markets[0];
+        // STRATEGY 1: Fetch directly via Market Slug (Priority)
+        // Endpoint: https://gamma-api.polymarket.com/markets/slug/{slug}
+        if (contractSlug && contractSlug.trim()) {
+          try {
+            const response = await fetch(`https://gamma-api.polymarket.com/markets/slug/${contractSlug.trim()}`);
+            if (response.ok) {
+              const data = await response.json();
+              // This endpoint returns the market object directly, not an array.
+              // Check if we got a valid object with a question
+              if (data && data.question) {
+                targetMarket = data;
+                if (data.slug) foundSlug = data.slug;
+              }
+            } else if (response.status !== 404) {
+              console.warn(`Failed to fetch by slug (${response.status}):`, contractSlug);
             }
+          } catch (e) {
+            console.warn("Failed to fetch by slug, falling back to ID", e);
           }
         }
 
-        // STRATEGY 2: Fallback to fetching by Condition ID (Markets endpoint)
-        // Useful if slug is missing from contract or malformed
-        if (!targetMarket) {
-          const response = await fetch(`https://gamma-api.polymarket.com/markets?condition_id=${conditionId}`);
-          const data = await response.json();
-          
-          // The markets endpoint returns an array of markets directly
-          if (Array.isArray(data) && data.length > 0) {
-             targetMarket = data[0];
-             // If we found it via ID, try to grab the slug from the result for the link
-             if (targetMarket.slug) foundSlug = targetMarket.slug;
+        // STRATEGY 2: Fallback to Condition IDs if slug fetch failed
+        // Endpoint: https://gamma-api.polymarket.com/markets?condition_ids=...
+        if (!targetMarket && isValidConditionId) {
+          try {
+            // Polymarket API typically expects condition IDs without the 0x prefix
+            // Try without prefix first (most common format)
+            const conditionIdWithoutPrefix = conditionId.startsWith('0x') 
+              ? conditionId.slice(2).toLowerCase()
+              : conditionId.toLowerCase();
+            
+            let response = await fetch(`https://gamma-api.polymarket.com/markets?condition_ids=${conditionIdWithoutPrefix}`);
+            
+            // If that fails, try with 0x prefix (some API versions might need it)
+            if (!response.ok && conditionId.startsWith('0x')) {
+              response = await fetch(`https://gamma-api.polymarket.com/markets?condition_ids=${conditionId.toLowerCase()}`);
+            }
+            
+            if (response.ok) {
+              const data = await response.json();
+              // This endpoint returns an ARRAY of markets
+              if (Array.isArray(data) && data.length > 0) {
+                targetMarket = data[0];
+                if (targetMarket.slug) foundSlug = targetMarket.slug;
+              } else if (data && !Array.isArray(data) && data.question) {
+                // Sometimes it might return a single object
+                targetMarket = data;
+                if (data.slug) foundSlug = data.slug;
+              }
+            } else if (response.status !== 404) {
+              console.warn(`Failed to fetch by condition ID (${response.status}):`, conditionId);
+            }
+          } catch (e) {
+            console.error("Error fetching by condition ID:", e);
           }
         }
 
         if (targetMarket) {
-          const outcomePrices = JSON.parse(targetMarket.outcomePrices || "[]");
-          const yesPrice = outcomePrices[0] ? Number(outcomePrices[0]) : 0;
+          // Polymarket returns outcomePrices as a stringified JSON array like "[\"0.99\",\"0.01\"]"
+          // or sometimes as a plain array depending on internal versions.
+          let yesPrice = 0;
+          try {
+            const rawPrices = targetMarket.outcomePrices;
+            let outcomePrices: unknown[] = [];
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[CampaignCard] Market found:', {
+                question: targetMarket.question,
+                slug: targetMarket.slug,
+                rawPrices,
+                type: typeof rawPrices
+              });
+            }
+            
+            if (rawPrices) {
+              if (typeof rawPrices === 'string') {
+                try {
+                  outcomePrices = JSON.parse(rawPrices);
+                } catch {
+                  // If parsing fails, try splitting by comma
+                  outcomePrices = rawPrices.split(',').map(p => p.trim().replace(/[\[\]"]/g, ''));
+                }
+              } else if (Array.isArray(rawPrices)) {
+                outcomePrices = rawPrices;
+              }
+            }
+
+            // Typically index 0 is YES for binary markets, or the "Long" position
+            if (Array.isArray(outcomePrices) && outcomePrices.length > 0) {
+              const firstPrice = outcomePrices[0];
+              yesPrice = typeof firstPrice === 'string' 
+                ? parseFloat(firstPrice.replace(/[^\d.]/g, '')) 
+                : Number(firstPrice);
+              
+              // Validate the price is a valid number between 0 and 1
+              if (isNaN(yesPrice) || yesPrice < 0 || yesPrice > 1) {
+                console.warn("[CampaignCard] Invalid price value:", yesPrice, "from", outcomePrices);
+                yesPrice = 0;
+              } else if (process.env.NODE_ENV === 'development') {
+                console.log('[CampaignCard] Parsed probability:', yesPrice * 100, '%');
+              }
+            } else {
+              console.warn("[CampaignCard] No valid outcome prices found in market data:", targetMarket);
+            }
+          } catch (e) {
+            console.error("[CampaignCard] Error parsing prices:", e, targetMarket);
+          }
 
           setMarketData({
-            question: targetMarket.question,
+            question: targetMarket.question || "Market question unavailable",
             probability: Math.round(yesPrice * 100),
             found: true,
-            slug: foundSlug // Save the working slug
+            slug: foundSlug
           });
         } else {
+          console.warn("No market found for conditionId:", conditionId, "slug:", contractSlug);
           setMarketData({ question: "Market data unavailable", probability: 0, found: false, slug: "" });
         }
       } catch (err) {
@@ -253,7 +351,7 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
   // --- D. Derived Values ---
   const hasMarket = marketData?.found;
   const realProbability = hasMarket ? marketData!.probability : 0;
-  const linkSlug = marketData?.slug || contractSlug; // Prefer API slug if found, else contract
+  const linkSlug = marketData?.slug || contractSlug;
 
   // Chart Generation
   const chartData = useMemo(() => {
@@ -397,7 +495,9 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
             <div className="flex items-end justify-between gap-4">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider mb-0.5">Probability</span>
-                {hasMarket ? (
+                {isMarketLoading ? (
+                  <span className="text-sm text-zinc-500 animate-pulse">Loading...</span>
+                ) : hasMarket ? (
                   <div className="flex items-baseline gap-1">
                     <span className={`text-4xl font-black tracking-tight ${probColor} drop-shadow-lg`}>
                       {realProbability}%

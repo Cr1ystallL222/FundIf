@@ -152,9 +152,11 @@ export default function CampaignPage({ params }: CampaignPageProps) {
               </h1>
 
               {/* Verified Badges Section */}
+              {/* Verified Badges Section */}
               <div className="flex flex-wrap gap-8 p-4 bg-white/5 rounded-xl border border-white/5">
-                <CreatorBadge address={campaign.creator} role="Creator" />
-                <CreatorBadge address={campaign.recipient} role="Recipient" />
+                {/* Change role to label in the two lines below */}
+                <CreatorBadge address={campaign.creator} label="Creator" />
+                <CreatorBadge address={campaign.recipient} label="Recipient" />
               </div>
             </motion.div>
 

@@ -19,7 +19,7 @@ import { baseSepolia } from 'viem/chains';
 /**
  * CampaignFactory contract address on Base Sepolia
  */
-export const CAMPAIGN_FACTORY_ADDRESS = '0x3451D5e377cccC4836Ae37ADE3f5639acd103165' as const;
+export const CAMPAIGN_FACTORY_ADDRESS = '0x8f77070E6641F59C59C8c502De68E58AF0f7fa43' as const;
 
 /**
  * Base Sepolia Chain ID
@@ -126,6 +126,11 @@ export const CAMPAIGN_FACTORY_ABI = [
         "name": "conditionId",
         "type": "bytes32",
         "internalType": "bytes32"
+      },
+      {
+        "name": "marketSlug",
+        "type": "string",
+        "internalType": "string"
       },
       {
         "name": "deadline",
@@ -291,6 +296,12 @@ export const CAMPAIGN_FACTORY_ABI = [
         "internalType": "bytes32"
       },
       {
+        "name": "marketSlug",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
         "name": "deadline",
         "type": "uint256",
         "indexed": false,
@@ -319,6 +330,8 @@ export interface CreateCampaignParams {
   recipient: Address;
   /** Prediction market condition ID (bytes32) from Polymarket */
   conditionId: `0x${string}`;
+  /** The slug for the market (e.g. "will-bitcoin-hit-100k") */
+  marketSlug: string; 
   /** Unix timestamp when funding period ends */
   deadline: bigint | number;
 }
@@ -402,6 +415,7 @@ const toast = {
  *     goalAmount: 1000, // $1000 USDC
  *     recipient: '0x...',
  *     conditionId: '0x...',
+ *     marketSlug: 'event-slug-name',
  *     deadline: BigInt(Math.floor(Date.now() / 1000) + 86400 * 30), // 30 days
  *   });
  * };
@@ -513,7 +527,7 @@ export function useCreateCampaign(): UseCreateCampaignReturn {
   // Create campaign function
   const createCampaign = useCallback(
     (params: CreateCampaignParams) => {
-      const { title, description, goalAmount, recipient, conditionId, deadline } = params;
+      const { title, description, goalAmount, recipient, conditionId, marketSlug, deadline } = params;
 
       // Validation
       if (!isConnected) {
@@ -537,6 +551,11 @@ export function useCreateCampaign(): UseCreateCampaignReturn {
 
       if (!description.trim()) {
         toast.error('Description required', { description: 'Please enter a campaign description' });
+        return;
+      }
+
+      if (!marketSlug?.trim()) {
+        toast.error('Market Slug required', { description: 'Please provide the Polymarket slug' });
         return;
       }
 
@@ -569,6 +588,7 @@ export function useCreateCampaign(): UseCreateCampaignReturn {
         goalAmountWithDecimals: goalAmountWithDecimals.toString(),
         recipient,
         conditionId,
+        marketSlug,
         deadline: deadlineBigInt.toString(),
       });
 
@@ -583,6 +603,7 @@ export function useCreateCampaign(): UseCreateCampaignReturn {
           goalAmountWithDecimals,
           recipient,
           conditionId,
+          marketSlug,
           deadlineBigInt,
         ],
         chainId: BASE_SEPOLIA_CHAIN_ID,

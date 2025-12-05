@@ -10,16 +10,8 @@ import { useAccount } from 'wagmi';
 import { isAddress } from 'viem';
 import { useRouter } from 'next/navigation';
 import { 
-  Loader2, 
-  AlertCircle, 
-  CheckCircle2, 
-  ArrowRight, 
-  Search, 
-  Info, 
-  Calendar, 
-  Wallet, 
-  RefreshCw,
-  ExternalLink
+  Loader2, AlertCircle, CheckCircle2, ArrowRight, Search, Info, 
+  Calendar, Wallet, RefreshCw, ExternalLink
 } from 'lucide-react';
 
 import { 
@@ -27,8 +19,6 @@ import {
   useConditionIdAsBytes32,
   BASE_SEPOLIA_CHAIN_ID 
 } from '@/hooks/useCreateCampaign';
-
-// Import our new Identity component
 import IdentityVerify from '@/components/ui/IdentityVerify';
 
 // =============================================================================
@@ -70,23 +60,15 @@ const Icons = {
 // =============================================================================
 
 const campaignSchema = z.object({
-  title: z.string()
-    .min(5, 'Title must be at least 5 characters')
-    .max(60, 'Title keeps it punchy (max 60 chars)'),
-  description: z.string()
-    .min(20, 'Tell us more about the campaign (min 20 chars)')
-    .max(1000, 'Description is too long'),
-  goalAmount: z.number({ message: 'Must be a number' })
-    .min(10, 'Minimum goal is 10 USDC')
-    .max(1000000, 'Maximum goal is 1,000,000 USDC'),
-  recipient: z.string()
-    .refine((val) => isAddress(val), 'Must be a valid Ethereum address'),
-  deadline: z.string()
-    .refine((val) => new Date(val) > new Date(), 'Deadline must be in the future'),
-  conditionId: z.string()
-    .min(1, 'You must select a prediction market'),
+  title: z.string().min(5).max(60),
+  description: z.string().min(20).max(1000),
+  goalAmount: z.number().min(10).max(1000000),
+  recipient: z.string().refine((val) => isAddress(val), { message: "Invalid address" }),
+  deadline: z.string().refine((val) => new Date(val) > new Date(), { message: "Deadline must be in the future" }),
+  conditionId: z.string().min(1, "Market selection is required"),
   marketQuestion: z.string().optional(),
-  marketSlug: z.string().optional(),
+  // New: Market Slug is now required for the contract
+  marketSlug: z.string().min(1, "Market slug is required"), 
 });
 
 type FormValues = z.infer<typeof campaignSchema>;
@@ -110,7 +92,8 @@ const Tooltip = ({ content }: { content: string }) => {
 const FormLabel = ({ children, required, tooltip }: { children: React.ReactNode; required?: boolean; tooltip?: string }) => (
   <label className="flex items-center text-xs font-medium text-zinc-400 mb-2 uppercase tracking-wider">
     {children}
-    {required && <span className="text-blue-500 ml-0.5">*</span>}
+    {/* Changed to lime-500 */}
+    {required && <span className="text-lime-500 ml-0.5">*</span>}
     {tooltip && <Tooltip content={tooltip} />}
   </label>
 );
@@ -140,7 +123,8 @@ interface Market {
   question: string;
   slug: string;
   outcomePrices: number[];
-  eventTitle?: string;  // Add this line
+  eventTitle?: string;
+  endDate?: string | null; // Added endDate to interface
 }
 
 const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => void; disabled: boolean; error?: string }) => {
@@ -188,7 +172,8 @@ const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => 
     <div className="relative z-50" ref={wrapperRef}>
       <div className={cn(
         "relative flex items-center w-full h-12 px-4 rounded-lg border bg-elevated transition-all duration-200",
-        error ? "border-red-500/50 focus-within:border-red-500" : "border-white/10 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20",
+        // Changed focus-within border/ring to lime
+        error ? "border-red-500/50 focus-within:border-red-500" : "border-white/10 focus-within:border-lime-500/50 focus-within:ring-1 focus-within:ring-lime-500/20",
         disabled && "opacity-50 cursor-not-allowed"
       )}>
         <Search className="w-4 h-4 text-zinc-500 mr-3" />
@@ -201,7 +186,8 @@ const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => 
           placeholder="Search events (e.g. 'Bitcoin', 'Election', 'Rate Cut')..."
           className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder:text-zinc-600"
         />
-        {loading && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+        {/* Changed loader color to lime */}
+        {loading && <Loader2 className="w-4 h-4 text-lime-500 animate-spin" />}
       </div>
 
       <AnimatePresence>
@@ -226,7 +212,14 @@ const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => 
                   }}
                   className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0 group"
                 >
-                  <div className="text-sm text-zinc-200 group-hover:text-white font-medium truncate">{market.question}</div>
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="text-sm text-zinc-200 group-hover:text-white font-medium truncate flex-1">{market.question}</div>
+                    {market.endDate && (
+                      <span className="text-[10px] text-zinc-600 font-mono whitespace-nowrap">
+                        {new Date(market.endDate).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[10px] text-zinc-500 font-mono">YES: {Math.round((market.outcomePrices?.[0] || 0) * 100)}%</span>
                     <span className="w-1 h-1 rounded-full bg-zinc-700" />
@@ -250,8 +243,6 @@ export default function CreateCampaignPage() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Separate state for the Input UI vs the Form Data
   const [recipientInput, setRecipientInput] = useState("");
 
   const {
@@ -268,43 +259,39 @@ export default function CreateCampaignPage() {
   } = useCreateCampaign();
 
   const { 
-    register, 
-    handleSubmit, 
-    control, 
-    setValue, 
-    watch, 
+    register, handleSubmit, control, setValue, watch, 
     formState: { errors, isValid } 
   } = useForm<FormValues>({
     resolver: zodResolver(campaignSchema),
     mode: 'onChange',
-    defaultValues: {
-      recipient: '', // We start empty, populating via IdentityVerify or Wallet connection
-    }
+    defaultValues: { recipient: '' }
   });
 
   const watchedValues = useWatch({ control });
   const conditionIdBytes32 = useConditionIdAsBytes32(watchedValues.conditionId || '');
 
-  // Effect: If user connects wallet, populate input automatically
   useEffect(() => {
     if (address && !recipientInput) {
       setRecipientInput(address);
       setValue('recipient', address, { shouldValidate: true });
     }
-  }, [address]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [address]); 
 
+  // --- SUBMISSION LOGIC ---
   const onSubmit = (data: FormValues) => {
     if (!isConnected) return;
     setIsSubmitting(true);
     
     try {
       const deadlineTimestamp = BigInt(Math.floor(new Date(data.deadline).getTime() / 1000));
+      
       createCampaign({
         title: data.title,
         description: data.description,
         goalAmount: data.goalAmount,
         recipient: data.recipient as `0x${string}`,
         conditionId: conditionIdBytes32,
+        marketSlug: data.marketSlug, // Passed from form state (required now)
         deadline: deadlineTimestamp,
       });
     } catch (err) {
@@ -324,15 +311,18 @@ export default function CreateCampaignPage() {
           animate={{ scale: 1, opacity: 1 }}
           className="max-w-md w-full bg-surface border border-white/10 rounded-2xl p-8 relative overflow-hidden"
         >
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-green-500/10 blur-3xl -z-10" />
+          {/* Changed background glow to lime */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-lime-500/10 blur-3xl -z-10" />
           <div className="flex flex-col items-center text-center">
             <motion.div 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center border border-green-500/20 mb-6"
+              // Changed success icon background and border to lime
+              className="w-16 h-16 bg-lime-500/10 rounded-full flex items-center justify-center border border-lime-500/20 mb-6"
             >
-              <CheckCircle2 className="w-8 h-8 text-green-400" />
+              {/* Changed icon color to lime-400 */}
+              <CheckCircle2 className="w-8 h-8 text-lime-400" />
             </motion.div>
 
             <h2 className="text-2xl font-bold text-white mb-2">Campaign Deployed</h2>
@@ -357,7 +347,8 @@ export default function CreateCampaignPage() {
                     href={`https://sepolia.basescan.org/tx/${hash}`} 
                     target="_blank" 
                     rel="noreferrer"
-                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                    // Changed link text color to lime
+                    className="text-xs text-lime-400 hover:text-lime-300 flex items-center gap-1"
                   >
                     Explorer <ArrowRight className="w-3 h-3" />
                   </a>
@@ -391,8 +382,10 @@ export default function CreateCampaignPage() {
   // MAIN FORM
   // ===========================================================================
   return (
-    <div className="min-h-screen bg-surface text-white selection:bg-blue-500/30 selection:text-blue-200 pb-20">
-      <div className="fixed top-0 left-0 right-0 h-96 bg-linear-to-b from-blue-900/10 via-surface/50 to-surface pointer-events-none z-0" />
+    // Changed selection color to lime
+    <div className="min-h-screen bg-surface text-white selection:bg-lime-500/30 selection:text-lime-200 pb-20">
+      {/* Changed gradient from blue to lime */}
+      <div className="fixed top-0 left-0 right-0 h-96 bg-linear-to-b from-lime-900/10 via-surface/50 to-surface pointer-events-none z-0" />
       
       <main className="relative z-10 max-w-7xl mx-auto px-6 pt-12 lg:pt-20">
         
@@ -403,8 +396,9 @@ export default function CreateCampaignPage() {
           className="mb-12 max-w-2xl"
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-px w-8 bg-blue-500" />
-            <span className="text-blue-500 text-xs font-mono uppercase tracking-widest">Campaign Studio</span>
+            {/* Changed line and text to lime */}
+            <div className="h-px w-8 bg-lime-500" />
+            <span className="text-lime-400 text-xs font-mono uppercase tracking-widest">Campaign Studio</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
             Create Logic-Gated Funding
@@ -450,9 +444,10 @@ export default function CreateCampaignPage() {
                     {...register('title')}
                     disabled={isPending}
                     placeholder="e.g. Mainnet Launch Fund"
+                    // Changed focus border/ring to lime
                     className={cn(
                       "w-full bg-elevated border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
-                      errors.title ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                      errors.title ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
                     )}
                   />
                   <InputError message={errors.title?.message} />
@@ -465,9 +460,10 @@ export default function CreateCampaignPage() {
                     disabled={isPending}
                     rows={5}
                     placeholder="Explain why you need funds and how the prediction market event aligns with your goals..."
+                    // Changed focus border/ring to lime
                     className={cn(
                       "w-full bg-elevated border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600 resize-none",
-                      errors.description ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                      errors.description ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
                     )}
                   />
                   <div className="flex justify-end">
@@ -497,31 +493,56 @@ export default function CreateCampaignPage() {
                         disabled={isPending}
                         error={errors.conditionId?.message}
                         onSelect={(market) => {
+                          // 1. Set Condition ID
                           field.onChange(market.conditionId);
+                          
+                          // 2. Set Question for Display
                           setValue('marketQuestion', market.question);
-                          setValue('marketSlug', market.slug);
+                          
+                          // 3. Set Slug for Contract (Crucial!)
+                          setValue('marketSlug', market.slug, { shouldValidate: true });
+
+                          // 4. Auto-fill deadline if market has an end date
+                          if (market.endDate) {
+                             const date = new Date(market.endDate);
+                             // Add 24 hours to market end date for campaign deadline logic
+                             date.setHours(date.getHours() + 24);
+                             // Format for datetime-local input: YYYY-MM-DDTHH:mm
+                             const isoString = date.toISOString().slice(0, 16);
+                             setValue('deadline', isoString, { shouldValidate: true });
+                          }
                         }}
                       />
                     )}
                   />
                   <InputError message={errors.conditionId?.message} />
+                  <InputError message={errors.marketSlug?.message} />
                   
                   {/* Selected Market Display Widget */}
                   {watchedValues.marketQuestion && (
                     <motion.div 
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-3 p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg flex gap-3"
+                      // Changed Widget colors from blue to lime
+                      className="mt-3 p-3 bg-lime-500/5 border border-lime-500/20 rounded-lg flex gap-3"
                     >
                       <div className="mt-1">
-                        <Icons.Polymarket className="w-4 h-4 text-blue-400" />
+                        {/* Icon color to lime */}
+                        <Icons.Polymarket className="w-4 h-4 text-lime-400" />
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-blue-200">Selected Event</p>
-                        <p className="text-sm text-white mt-0.5">{watchedValues.marketQuestion}</p>
-                        <p className="text-[10px] font-mono text-blue-400/60 mt-1 truncate max-w-xs">
-                          {watchedValues.conditionId}
-                        </p>
+                      <div className="flex-1 min-w-0">
+                        {/* Label color to lime-200 */}
+                        <p className="text-xs font-medium text-lime-200">Selected Event</p>
+                        <p className="text-sm text-white mt-0.5 truncate">{watchedValues.marketQuestion}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {/* Code color to lime-400/60 */}
+                          <code className="text-[10px] font-mono text-lime-400/60 truncate max-w-[150px]">
+                            {watchedValues.conditionId}
+                          </code>
+                          <span className="text-[10px] text-zinc-500 px-1 border-l border-white/10">
+                            Slug: {watchedValues.marketSlug}
+                          </span>
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -545,9 +566,10 @@ export default function CreateCampaignPage() {
                         {...register('goalAmount', { valueAsNumber: true })}
                         disabled={isPending}
                         placeholder="10000"
+                        // Changed focus border/ring to lime
                         className={cn(
                           "w-full bg-elevated border rounded-lg pl-4 pr-16 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
-                          errors.goalAmount ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                          errors.goalAmount ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
                         )}
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
@@ -565,9 +587,10 @@ export default function CreateCampaignPage() {
                         type="datetime-local"
                         {...register('deadline')}
                         disabled={isPending}
+                        // Changed focus border/ring to lime
                         className={cn(
                           "w-full bg-elevated border rounded-lg px-4 py-3 text-sm text-white transition-all duration-200 outline-none placeholder:text-zinc-600 scheme-dark",
-                          errors.deadline ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                          errors.deadline ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
                         )}
                       />
                       <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
@@ -597,9 +620,10 @@ export default function CreateCampaignPage() {
                       }}
                       disabled={isPending}
                       placeholder="0x... or name.base.eth"
+                      // Changed focus border/ring to lime
                       className={cn(
                         "w-full bg-elevated border rounded-lg pl-10 pr-24 py-3 text-sm font-mono text-white transition-all duration-200 outline-none placeholder:text-zinc-600",
-                        errors.recipient ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                        errors.recipient ? "border-red-500/50 focus:border-red-500" : "border-white/10 focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/20"
                       )}
                     />
                     <Icons.Ethereum className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -694,6 +718,7 @@ export default function CreateCampaignPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-mono uppercase text-zinc-500 tracking-widest">Live Preview</h3>
                 <div className="flex gap-1.5">
+                  {/* Kept green as standard "Online" indicator, could change to lime-500 if desired */}
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   <span className="text-[10px] text-zinc-400">Updating</span>
                 </div>
@@ -709,7 +734,8 @@ export default function CreateCampaignPage() {
                   <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
                   <div className="relative z-10">
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 border border-white/10 text-[10px] text-white backdrop-blur-md">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      {/* Changed indicator dot to lime */}
+                      <div className="w-1.5 h-1.5 rounded-full bg-lime-500" />
                       Conditional Funding
                     </span>
                   </div>
@@ -738,16 +764,32 @@ export default function CreateCampaignPage() {
 
                   {/* The "IF" Logic Block */}
                   <div className="bg-surface border border-white/5 rounded-lg p-4 relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icons.Polymarket className="w-4 h-4 text-zinc-500" />
-                      <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Condition</span>
+                    {/* Changed side strip to lime */}
+                    <div className="absolute top-0 left-0 w-1 h-full bg-lime-500" />
+                    <div className="flex items-center justify-between mb-2">
+                       <div className="flex items-center gap-2">
+                        <Icons.Polymarket className="w-4 h-4 text-zinc-500" />
+                        <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Condition</span>
+                       </div>
+                       {watchedValues.marketSlug && (
+                         <a 
+                           href={`https://polymarket.com/event/${watchedValues.marketSlug}`} 
+                           target="_blank"
+                           rel="noreferrer"
+                           // Changed link color to lime
+                           className="text-[10px] text-lime-500 hover:text-lime-400 flex items-center gap-1"
+                         >
+                           View on Polymarket <ArrowRight className="w-2.5 h-2.5" />
+                         </a>
+                       )}
                     </div>
-                    <p className="text-sm text-blue-100 font-medium">
+                    {/* Changed Question text to lime-100 */}
+                    <p className="text-sm text-lime-100 font-medium">
                       {watchedValues.marketQuestion || "Select a prediction market..."}
                     </p>
                     <div className="mt-3 flex items-center gap-2 text-[10px] text-zinc-500">
                       <span>Outcome:</span>
+                      {/* Kept green here as it represents "Yes" specifically, but could be lime if preferred */}
                       <span className="px-1.5 py-0.5 bg-green-500/10 text-green-400 rounded border border-green-500/20 font-bold">YES</span>
                     </div>
                   </div>

@@ -7,13 +7,13 @@ import { motion, AnimatePresence, LayoutGroup, Variants } from "framer-motion";
    1. DESIGN SYSTEM & ANIMATION CONFIG
    ================================================================================== */
 
-// Slower, smoother spring physics for the layout shift
+// FIX: Added 'as const' so TypeScript knows "spring" is a specific literal, not just a string.
 const LAYOUT_TRANSITION = {
   type: "spring",
   stiffness: 70,  // Lower stiffness = looser, slower movement
   damping: 20,    // Higher damping = less oscillation
   mass: 1.2
-};
+} as const;
 
 const ANIMATION_CONFIG = {
   ease: [0.16, 1, 0.3, 1] as const,

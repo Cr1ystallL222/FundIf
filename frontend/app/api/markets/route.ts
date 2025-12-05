@@ -2,7 +2,6 @@
 
 import { NextResponse } from 'next/server';
 
-// Enable Edge Runtime for better performance and global distribution
 export const runtime = 'edge';
 
 // ============ Type Definitions ============
@@ -12,8 +11,8 @@ interface PolymarketMarket {
   question: string;
   conditionId: string;
   slug: string;
-  outcomes: string;           // JSON string: '["Yes", "No"]'
-  outcomePrices?: string;     // JSON string: '[0.65, 0.35]'
+  outcomes: string;
+  outcomePrices?: string;
   active: boolean;
   closed: boolean;
   endDate?: string;
@@ -30,7 +29,6 @@ interface PolymarketEvent {
   endDate?: string;
 }
 
-// Clean response type matching your requirements
 export interface CleanMarket {
   conditionId: string;
   question: string;
@@ -38,7 +36,6 @@ export interface CleanMarket {
   endDate: string | null;
   outcomePrices: number[];
   outcomes: string[];
-  // Bonus: include event context
   eventTitle: string;
   eventSlug: string;
 }
@@ -54,15 +51,14 @@ export interface MarketsApiResponse {
 
 const POLYMARKET_GAMMA_API = 'https://gamma-api.polymarket.com';
 const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 100;
-const CACHE_TTL = 60; // seconds
+const MAX_LIMIT = 100; // Increased to capture more markets per event
+const CACHE_TTL = 60; 
 
 // ============ Helper Functions ============
 
 function parseJsonField<T>(value: string | T | undefined, fallback: T): T {
   if (value === undefined || value === null) return fallback;
   if (typeof value !== 'string') return value as T;
-  
   try {
     return JSON.parse(value) as T;
   } catch {
@@ -73,7 +69,6 @@ function parseJsonField<T>(value: string | T | undefined, fallback: T): T {
 function normalizeOutcomePrices(prices: unknown[]): number[] {
   return prices.map((p) => {
     const num = Number(p);
-    // Round to 4 decimal places (e.g., 0.6523)
     return isNaN(num) ? 0 : Math.round(num * 10000) / 10000;
   });
 }
@@ -82,7 +77,6 @@ function normalizeOutcomePrices(prices: unknown[]): number[] {
 
 export async function GET(request: Request) {
   try {
-    // 1. Parse query parameters
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim() || '';
     const limitParam = parseInt(searchParams.get('limit') || '', 10);
@@ -91,18 +85,20 @@ export async function GET(request: Request) {
       MAX_LIMIT
     );
 
-    // 2. Build Polymarket API URL
     const apiUrl = new URL(`${POLYMARKET_GAMMA_API}/events`);
     apiUrl.searchParams.set('active', 'true');
     apiUrl.searchParams.set('closed', 'false');
     apiUrl.searchParams.set('limit', String(limit));
+    
+    // Always sort by volume to show "Majors" first
+    apiUrl.searchParams.set('order', 'volume24hr');
+    apiUrl.searchParams.set('ascending', 'false');
 
-    // Search by title if query provided
+    // Use 'q' for full-text search (Title, Slug, Desc)
     if (search) {
-      apiUrl.searchParams.set('title_like', search);
+      apiUrl.searchParams.set('q', search);
     }
 
-    // 3. Fetch from Polymarket with ISR caching
     const response = await fetch(apiUrl.toString(), {
       headers: {
         'Accept': 'application/json',
@@ -114,50 +110,37 @@ export async function GET(request: Request) {
       },
     });
 
-    // 4. Handle API errors
     if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.error(`[Polymarket API] ${response.status}: ${errorText}`);
-      
-      throw new Error(
-        response.status === 429
-          ? 'Rate limited by Polymarket API'
-          : `Polymarket API error: ${response.status}`
-      );
+      throw new Error(`Polymarket API error: ${response.status}`);
     }
 
-    // 5. Parse and transform response
     const events: PolymarketEvent[] = await response.json();
     const markets: CleanMarket[] = [];
+    const searchLower = search.toLowerCase();
 
     for (const event of events) {
-      // Skip events without valid markets array
-      if (!Array.isArray(event.markets) || event.markets.length === 0) {
-        continue;
-      }
+      if (!Array.isArray(event.markets) || event.markets.length === 0) continue;
 
       for (const market of event.markets) {
-        // Validate required fields
-        if (!market.conditionId || !market.question) {
-          continue;
+        if (!market.conditionId || !market.question) continue;
+        if (market.closed || !market.active) continue;
+
+        // FILTER: Relaxed matching logic
+        // If user searches "Trump", we want:
+        // 1. Markets with "Trump" in the question.
+        // 2. Markets inside an event titled "Trump" (even if question is "Winner").
+        if (search) {
+          const questionMatch = market.question.toLowerCase().includes(searchLower);
+          const titleMatch = event.title.toLowerCase().includes(searchLower);
+          const slugMatch = (market.slug || '').toLowerCase().includes(searchLower);
+          
+          if (!questionMatch && !titleMatch && !slugMatch) {
+            continue;
+          }
         }
 
-        // Skip closed/inactive markets
-        if (market.closed || !market.active) {
-          continue;
-        }
-
-        // Parse outcomes (default to Yes/No binary)
-        const outcomes = parseJsonField<string[]>(
-          market.outcomes,
-          ['Yes', 'No']
-        );
-
-        // Parse and normalize outcome prices
-        const rawPrices = parseJsonField<unknown[]>(
-          market.outcomePrices,
-          []
-        );
+        const outcomes = parseJsonField<string[]>(market.outcomes, ['Yes', 'No']);
+        const rawPrices = parseJsonField<unknown[]>(market.outcomePrices, []);
         const outcomePrices = normalizeOutcomePrices(rawPrices);
 
         markets.push({
@@ -173,10 +156,12 @@ export async function GET(request: Request) {
       }
     }
 
-    // 6. Sort results alphabetically by question
-    markets.sort((a, b) => a.question.localeCompare(b.question));
+    // Sort alphabetical by default for clean UI, unless pure volume is preferred
+    // If searched, we keep alphabetical. If default view, volume is handled by API return order.
+    if (search) {
+       markets.sort((a, b) => a.question.localeCompare(b.question));
+    }
 
-    // 7. Return success response
     return NextResponse.json<MarketsApiResponse>(
       {
         success: true,
@@ -193,14 +178,7 @@ export async function GET(request: Request) {
     );
 
   } catch (error) {
-    // Log error for debugging
     console.error('[Markets API Error]', error);
-
-    // Determine appropriate status code
-    const status = error instanceof Error && error.message.includes('Rate limited')
-      ? 429
-      : 500;
-
     return NextResponse.json<MarketsApiResponse>(
       {
         success: false,
@@ -208,12 +186,7 @@ export async function GET(request: Request) {
         count: 0,
         error: error instanceof Error ? error.message : 'Failed to fetch markets',
       },
-      {
-        status,
-        headers: {
-          'Cache-Control': 'no-store',
-        },
-      }
+      { status: 500 }
     );
   }
 }

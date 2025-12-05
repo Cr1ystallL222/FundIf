@@ -188,28 +188,13 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
   const [isMarketLoading, setIsMarketLoading] = useState(false);
 
   // --- C. Fetch Polymarket Data ---
+    // --- C. Fetch Polymarket Data ---
   useEffect(() => {
     const fetchMarket = async () => {
-      // Check for zero condition ID (invalid)
       const ZERO_CONDITION_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';
       const isValidConditionId = conditionId && conditionId !== ZERO_CONDITION_ID && conditionId !== '0x';
       
-      // Debug logging (only in development)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[CampaignCard] Fetching market data:', {
-          conditionId,
-          isValidConditionId,
-          contractSlug,
-          hasConditionId: !!conditionId,
-          hasSlug: !!contractSlug
-        });
-      }
-      
-      // Need at least a slug or valid ID to work with
       if (!isValidConditionId && !contractSlug) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[CampaignCard] No valid conditionId or slug to fetch market');
-        }
         setMarketData({ question: "", probability: 0, found: false, slug: "" });
         return;
       }
@@ -219,57 +204,43 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
         let targetMarket = null;
         let foundSlug = contractSlug || "";
 
-        // STRATEGY 1: Fetch directly via Market Slug (Priority)
-        // Endpoint: https://gamma-api.polymarket.com/markets/slug/{slug}
+        // STRATEGY 1: Fetch via Market Slug (Using local API Proxy)
         if (contractSlug && contractSlug.trim()) {
           try {
-            const response = await fetch(`https://gamma-api.polymarket.com/markets/slug/${contractSlug.trim()}`);
+            // CHANGE: Point to your local API
+            const response = await fetch(`/api/markets?slug=${contractSlug.trim()}`);
             if (response.ok) {
               const data = await response.json();
-              // This endpoint returns the market object directly, not an array.
-              // Check if we got a valid object with a question
               if (data && data.question) {
                 targetMarket = data;
                 if (data.slug) foundSlug = data.slug;
               }
-            } else if (response.status !== 404) {
-              console.warn(`Failed to fetch by slug (${response.status}):`, contractSlug);
             }
           } catch (e) {
             console.warn("Failed to fetch by slug, falling back to ID", e);
           }
         }
 
-        // STRATEGY 2: Fallback to Condition IDs if slug fetch failed
-        // Endpoint: https://gamma-api.polymarket.com/markets?condition_ids=...
+        // STRATEGY 2: Fallback to Condition IDs (Using local API Proxy)
         if (!targetMarket && isValidConditionId) {
           try {
-            // Polymarket API typically expects condition IDs without the 0x prefix
-            // Try without prefix first (most common format)
-            const conditionIdWithoutPrefix = conditionId.startsWith('0x') 
-              ? conditionId.slice(2).toLowerCase()
-              : conditionId.toLowerCase();
+            const conditionIdWithoutPrefix = conditionId!.startsWith('0x') 
+              ? conditionId!.slice(2).toLowerCase()
+              : conditionId!.toLowerCase();
             
-            let response = await fetch(`https://gamma-api.polymarket.com/markets?condition_ids=${conditionIdWithoutPrefix}`);
-            
-            // If that fails, try with 0x prefix (some API versions might need it)
-            if (!response.ok && conditionId.startsWith('0x')) {
-              response = await fetch(`https://gamma-api.polymarket.com/markets?condition_ids=${conditionId.toLowerCase()}`);
-            }
+            // CHANGE: Point to your local API
+            const response = await fetch(`/api/markets?condition_id=${conditionIdWithoutPrefix}`);
             
             if (response.ok) {
               const data = await response.json();
-              // This endpoint returns an ARRAY of markets
+              // Handling Array vs Object return types
               if (Array.isArray(data) && data.length > 0) {
                 targetMarket = data[0];
                 if (targetMarket.slug) foundSlug = targetMarket.slug;
               } else if (data && !Array.isArray(data) && data.question) {
-                // Sometimes it might return a single object
                 targetMarket = data;
                 if (data.slug) foundSlug = data.slug;
               }
-            } else if (response.status !== 404) {
-              console.warn(`Failed to fetch by condition ID (${response.status}):`, conditionId);
             }
           } catch (e) {
             console.error("Error fetching by condition ID:", e);
@@ -277,28 +248,16 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
         }
 
         if (targetMarket) {
-          // Polymarket returns outcomePrices as a stringified JSON array like "[\"0.99\",\"0.01\"]"
-          // or sometimes as a plain array depending on internal versions.
           let yesPrice = 0;
           try {
             const rawPrices = targetMarket.outcomePrices;
             let outcomePrices: unknown[] = [];
-            
-            if (process.env.NODE_ENV === 'development') {
-              console.log('[CampaignCard] Market found:', {
-                question: targetMarket.question,
-                slug: targetMarket.slug,
-                rawPrices,
-                type: typeof rawPrices
-              });
-            }
             
             if (rawPrices) {
               if (typeof rawPrices === 'string') {
                 try {
                   outcomePrices = JSON.parse(rawPrices);
                 } catch {
-                  // If parsing fails, try splitting by comma
                   outcomePrices = rawPrices.split(',').map(p => p.trim().replace(/[\[\]"]/g, ''));
                 }
               } else if (Array.isArray(rawPrices)) {
@@ -306,25 +265,18 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
               }
             }
 
-            // Typically index 0 is YES for binary markets, or the "Long" position
             if (Array.isArray(outcomePrices) && outcomePrices.length > 0) {
               const firstPrice = outcomePrices[0];
               yesPrice = typeof firstPrice === 'string' 
                 ? parseFloat(firstPrice.replace(/[^\d.]/g, '')) 
                 : Number(firstPrice);
               
-              // Validate the price is a valid number between 0 and 1
               if (isNaN(yesPrice) || yesPrice < 0 || yesPrice > 1) {
-                console.warn("[CampaignCard] Invalid price value:", yesPrice, "from", outcomePrices);
                 yesPrice = 0;
-              } else if (process.env.NODE_ENV === 'development') {
-                console.log('[CampaignCard] Parsed probability:', yesPrice * 100, '%');
               }
-            } else {
-              console.warn("[CampaignCard] No valid outcome prices found in market data:", targetMarket);
-            }
+            } 
           } catch (e) {
-            console.error("[CampaignCard] Error parsing prices:", e, targetMarket);
+            console.error("[CampaignCard] Error parsing prices:", e);
           }
 
           setMarketData({
@@ -334,7 +286,6 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
             slug: foundSlug
           });
         } else {
-          console.warn("No market found for conditionId:", conditionId, "slug:", contractSlug);
           setMarketData({ question: "Market data unavailable", probability: 0, found: false, slug: "" });
         }
       } catch (err) {

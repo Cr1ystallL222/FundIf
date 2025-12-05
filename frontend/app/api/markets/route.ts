@@ -4,8 +4,11 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
-// ============ Type Definitions ============
+// ============ Constants ============
+const POLYMARKET_GAMMA_API = 'https://gamma-api.polymarket.com';
+const CACHE_TTL = 60; 
 
+// ============ Types (Kept from your original file for the list view logic) ============
 interface PolymarketMarket {
   id: string;
   question: string;
@@ -40,22 +43,7 @@ export interface CleanMarket {
   eventSlug: string;
 }
 
-export interface MarketsApiResponse {
-  success: boolean;
-  data: CleanMarket[];
-  count: number;
-  error?: string;
-}
-
-// ============ Constants ============
-
-const POLYMARKET_GAMMA_API = 'https://gamma-api.polymarket.com';
-const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 100; // Increased to capture more markets per event
-const CACHE_TTL = 60; 
-
 // ============ Helper Functions ============
-
 function parseJsonField<T>(value: string | T | undefined, fallback: T): T {
   if (value === undefined || value === null) return fallback;
   if (typeof value !== 'string') return value as T;
@@ -78,23 +66,59 @@ function normalizeOutcomePrices(prices: unknown[]): number[] {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    
+    // ============================================================
+    // PART 1: PROXY LOGIC (Fixes your CORS issue)
+    // Handles direct lookups for CampaignCard.tsx
+    // ============================================================
+    const lookupSlug = searchParams.get('slug');
+    const lookupConditionId = searchParams.get('condition_id');
+
+    // If looking up by SLUG specifically
+    if (lookupSlug) {
+      const res = await fetch(`${POLYMARKET_GAMMA_API}/markets/slug/${lookupSlug}`, {
+        next: { revalidate: CACHE_TTL } 
+      });
+      
+      if (!res.ok) {
+        return NextResponse.json({ error: 'Market not found' }, { status: res.status });
+      }
+      const data = await res.json();
+      return NextResponse.json(data);
+    }
+
+    // If looking up by CONDITION ID specifically
+    if (lookupConditionId) {
+      const res = await fetch(`${POLYMARKET_GAMMA_API}/markets?condition_ids=${lookupConditionId}`, {
+        next: { revalidate: CACHE_TTL }
+      });
+      
+      if (!res.ok) {
+        return NextResponse.json({ error: 'Market not found' }, { status: res.status });
+      }
+      const data = await res.json();
+      return NextResponse.json(data);
+    }
+
+    // ============================================================
+    // PART 2: EXISTING LIST/SEARCH LOGIC
+    // Handles bulk fetching for lists
+    // ============================================================
+    
     const search = searchParams.get('search')?.trim() || '';
     const limitParam = parseInt(searchParams.get('limit') || '', 10);
     const limit = Math.min(
-      isNaN(limitParam) ? DEFAULT_LIMIT : limitParam,
-      MAX_LIMIT
+      isNaN(limitParam) ? 50 : limitParam,
+      100
     );
 
     const apiUrl = new URL(`${POLYMARKET_GAMMA_API}/events`);
     apiUrl.searchParams.set('active', 'true');
     apiUrl.searchParams.set('closed', 'false');
     apiUrl.searchParams.set('limit', String(limit));
-    
-    // Always sort by volume to show "Majors" first
     apiUrl.searchParams.set('order', 'volume24hr');
     apiUrl.searchParams.set('ascending', 'false');
 
-    // Use 'q' for full-text search (Title, Slug, Desc)
     if (search) {
       apiUrl.searchParams.set('q', search);
     }
@@ -125,10 +149,6 @@ export async function GET(request: Request) {
         if (!market.conditionId || !market.question) continue;
         if (market.closed || !market.active) continue;
 
-        // FILTER: Relaxed matching logic
-        // If user searches "Trump", we want:
-        // 1. Markets with "Trump" in the question.
-        // 2. Markets inside an event titled "Trump" (even if question is "Winner").
         if (search) {
           const questionMatch = market.question.toLowerCase().includes(searchLower);
           const titleMatch = event.title.toLowerCase().includes(searchLower);
@@ -156,13 +176,11 @@ export async function GET(request: Request) {
       }
     }
 
-    // Sort alphabetical by default for clean UI, unless pure volume is preferred
-    // If searched, we keep alphabetical. If default view, volume is handled by API return order.
     if (search) {
        markets.sort((a, b) => a.question.localeCompare(b.question));
     }
 
-    return NextResponse.json<MarketsApiResponse>(
+    return NextResponse.json(
       {
         success: true,
         data: markets,
@@ -179,7 +197,7 @@ export async function GET(request: Request) {
 
   } catch (error) {
     console.error('[Markets API Error]', error);
-    return NextResponse.json<MarketsApiResponse>(
+    return NextResponse.json(
       {
         success: false,
         data: [],

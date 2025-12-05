@@ -1,10 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useReadContracts } from 'wagmi';
+import { useReadContracts, useAccount } from 'wagmi';
 import { formatUnits } from 'viem';
 import type { Address } from 'viem';
 
+const USDC_DECIMALS = 6;
+
+// Expanded ABI to include 'contributions' mapping
 const campaignAbi = [
   {
     type: 'function',
@@ -76,9 +79,15 @@ const campaignAbi = [
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'view',
   },
+  // NEW: Personal Contribution Mapping
+  {
+    type: 'function',
+    name: 'contributions',
+    inputs: [{ name: '', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
 ] as const;
-
-const USDC_DECIMALS = 6;
 
 export interface FormattedCampaign {
   title: string;
@@ -91,10 +100,12 @@ export interface FormattedCampaign {
   recipient: Address;
   resolved: boolean;
   outcomeYes: boolean;
+  userContribution: string; // NEW FIELD
 }
 
 export function useCampaign(campaignAddress: string) {
   const address = campaignAddress as Address;
+  const { address: userAddress } = useAccount();
 
   const { data, isLoading, error, refetch } = useReadContracts({
     contracts: [
@@ -108,6 +119,13 @@ export function useCampaign(campaignAddress: string) {
       { address, abi: campaignAbi, functionName: 'recipient' },
       { address, abi: campaignAbi, functionName: 'resolved' },
       { address, abi: campaignAbi, functionName: 'outcomeYes' },
+      // NEW: Fetch User Contribution
+      { 
+        address, 
+        abi: campaignAbi, 
+        functionName: 'contributions',
+        args: [userAddress || '0x0000000000000000000000000000000000000000']
+      },
     ],
     query: {
       enabled: Boolean(campaignAddress),
@@ -117,8 +135,8 @@ export function useCampaign(campaignAddress: string) {
   const campaign = useMemo<FormattedCampaign | null>(() => {
     if (!data) return null;
 
-    const hasFailure = data.some((result) => result.status === 'failure');
-    if (hasFailure) return null;
+    // Basic check to ensure critical fields loaded
+    if (data[0].status === 'failure') return null;
 
     const [
       titleResult,
@@ -131,19 +149,22 @@ export function useCampaign(campaignAddress: string) {
       recipientResult,
       resolvedResult,
       outcomeYesResult,
+      contributionResult // NEW
     ] = data;
 
     return {
-      title: titleResult.result as string,
-      description: descriptionResult.result as string,
-      goalAmount: formatUnits(goalAmountResult.result as bigint, USDC_DECIMALS),
-      totalFunded: formatUnits(totalFundedResult.result as bigint, USDC_DECIMALS),
-      deadline: new Date(Number(deadlineResult.result as bigint) * 1000),
-      conditionId: conditionIdResult.result as `0x${string}`,
-      creator: creatorResult.result as Address,
-      recipient: recipientResult.result as Address,
-      resolved: resolvedResult.result as boolean,
-      outcomeYes: outcomeYesResult.result as boolean,
+      title: (titleResult.result as string) || '',
+      description: (descriptionResult.result as string) || '',
+      goalAmount: goalAmountResult.result ? formatUnits(goalAmountResult.result as bigint, USDC_DECIMALS) : '0',
+      totalFunded: totalFundedResult.result ? formatUnits(totalFundedResult.result as bigint, USDC_DECIMALS) : '0',
+      deadline: new Date(Number(deadlineResult.result || 0n) * 1000),
+      conditionId: (conditionIdResult.result as `0x${string}`) || '0x',
+      creator: (creatorResult.result as Address) || '0x',
+      recipient: (recipientResult.result as Address) || '0x',
+      resolved: (resolvedResult.result as boolean) || false,
+      outcomeYes: (outcomeYesResult.result as boolean) || false,
+      // NEW: Format User Contribution
+      userContribution: contributionResult.result ? formatUnits(contributionResult.result as bigint, USDC_DECIMALS) : '0',
     };
   }, [data]);
 

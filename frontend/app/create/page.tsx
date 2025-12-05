@@ -374,7 +374,7 @@ export default function CreateCampaignPage() {
                 Create New
               </button>
               <button
-                onClick={() => router.push(`/campaigns/${createdCampaignAddress}`)}
+                onClick={() => router.push(`/campaign/${createdCampaignAddress}`)} 
                 className="flex-1 py-3 px-4 rounded-lg bg-white text-black text-sm font-medium hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
               >
                 View Campaign

@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useState, useEffect, ReactNode } from 'react';
-import { motion, AnimatePresence, Variants } from 'framer-motion'; // 1. Added Variants import
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useCampaign } from '@/hooks/useCampaign';
 import { FundForm } from '@/components/forms/FundForm';
 import ResolutionActions from '@/components/campaign/ResolutionActions';
@@ -39,9 +39,15 @@ const Icons = {
       <line x1="3" y1="10" x2="21" y2="10"></line>
     </svg>
   ),
+  TrendingUp: ({ className }: { className?: string }) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+      <polyline points="17 6 23 6 23 12"></polyline>
+    </svg>
+  ),
 };
 
-// 2. Explicitly type the animation object
+// Animation Variants
 const anim: Record<string, Variants> = {
   container: {
     hidden: { opacity: 0 },
@@ -80,6 +86,10 @@ export default function CampaignPage({ params }: CampaignPageProps) {
   const { address } = use(params);
   const { campaign, isLoading, error, refetch } = useCampaign(address);
 
+  // --- Market Probability State ---
+  const [marketProb, setMarketProb] = useState<number | null>(null);
+  const [isMarketLoading, setIsMarketLoading] = useState(false);
+
   // --- Logic ---
   const goalAmount = campaign ? parseFloat(campaign.goalAmount) : 0;
   const totalFunded = campaign ? parseFloat(campaign.totalFunded) : 0;
@@ -89,13 +99,90 @@ export default function CampaignPage({ params }: CampaignPageProps) {
   const isExpired = campaign ? campaign.deadline < new Date() : false;
   const canFund = campaign && !campaign.resolved && !isExpired;
 
-  // 3. Type the internal variant
   const progressVariant: Variants = {
     initial: { width: 0 },
     animate: { 
       width: `${progressPercentage}%`,
       transition: { duration: 1.5, ease: [0.22, 1, 0.36, 1] }
     }
+  };
+
+  // --- Fetch Market Data (Polymarket via Proxy) ---
+  useEffect(() => {
+    if (!campaign) return;
+
+    const fetchMarket = async () => {
+      // Try to get slug or ID from campaign object. 
+      // Note: Ensure your useCampaign hook actually returns marketSlug, otherwise fallback to conditionId
+      // @ts-ignore - Assuming marketSlug might exist on the returned object even if not strictly typed yet
+      const slug = campaign.marketSlug; 
+      const conditionId = campaign.conditionId;
+
+      const ZERO_CONDITION_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const isValidConditionId = conditionId && conditionId !== ZERO_CONDITION_ID && conditionId !== '0x';
+
+      if (!isValidConditionId && !slug) return;
+
+      setIsMarketLoading(true);
+      try {
+        let targetMarket = null;
+
+        // 1. Try fetching by Slug via our Proxy
+        if (slug) {
+          try {
+            const res = await fetch(`/api/markets?slug=${slug}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.question) targetMarket = data;
+            }
+          } catch (e) { console.warn("Slug fetch failed", e); }
+        }
+
+        // 2. Try fetching by Condition ID via our Proxy
+        if (!targetMarket && isValidConditionId) {
+          try {
+            const cleanId = conditionId.startsWith('0x') ? conditionId.slice(2) : conditionId;
+            const res = await fetch(`/api/markets?condition_id=${cleanId}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data) && data.length > 0) targetMarket = data[0];
+              else if (data && data.question) targetMarket = data;
+            }
+          } catch (e) { console.warn("ID fetch failed", e); }
+        }
+
+        // 3. Parse Probability
+        if (targetMarket && targetMarket.outcomePrices) {
+          let outcomePrices: any[] = [];
+          const raw = targetMarket.outcomePrices;
+          
+          if (typeof raw === 'string') {
+             try { outcomePrices = JSON.parse(raw); } 
+             catch { outcomePrices = raw.split(',').map(p => p.replace(/[\[\]"]/g, '')); }
+          } else if (Array.isArray(raw)) {
+             outcomePrices = raw;
+          }
+
+          if (outcomePrices.length > 0) {
+            const yesStr = String(outcomePrices[0]);
+            const yesVal = parseFloat(yesStr);
+            if (!isNaN(yesVal)) setMarketProb(Math.round(yesVal * 100));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching market logic", err);
+      } finally {
+        setIsMarketLoading(false);
+      }
+    };
+
+    fetchMarket();
+  }, [campaign]);
+
+  const getProbColor = (p: number) => {
+    if (p >= 70) return "text-emerald-400";
+    if (p >= 40) return "text-yellow-400";
+    return "text-red-500";
   };
 
   if (isLoading) return <CampaignSkeleton />;
@@ -129,7 +216,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
             
             {/* 1. Header Card */}
             <motion.div variants={anim.item} className="glass-panel p-8 relative overflow-hidden">
-              <div className="flex flex-wrap gap-3 mb-6">
+              <div className="flex flex-wrap gap-3 mb-4">
                 {campaign.resolved ? (
                   <span className={`badge ${campaign.outcomeYes ? 'badge-success' : 'badge-error'}`}>
                     {campaign.outcomeYes ? 'Outcome: YES' : 'Outcome: NO'}
@@ -147,14 +234,34 @@ export default function CampaignPage({ params }: CampaignPageProps) {
                 )}
               </div>
 
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight leading-tight">
-                {campaign.title}
-              </h1>
+              {/* Title Row with Probability on the Right */}
+              <div className="flex justify-between items-start gap-6 mb-6">
+                <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight flex-1">
+                  {campaign.title}
+                </h1>
+
+                {/* Probability Display */}
+                {(marketProb !== null || isMarketLoading) && (
+                  <div className="flex-shrink-0 flex flex-col items-end bg-white/5 border border-white/10 p-3 rounded-xl backdrop-blur-md min-w-[100px]">
+                    <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1">
+                      <Icons.TrendingUp className="w-3 h-3" /> Probability
+                    </div>
+                    {isMarketLoading ? (
+                      <div className="h-8 w-16 bg-white/10 animate-pulse rounded" />
+                    ) : (
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-3xl font-black ${getProbColor(marketProb || 0)}`}>
+                          {marketProb}%
+                        </span>
+                        <span className="text-xs font-bold text-zinc-600">YES</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Verified Badges Section */}
-              {/* Verified Badges Section */}
               <div className="flex flex-wrap gap-8 p-4 bg-white/5 rounded-xl border border-white/5">
-                {/* Change role to label in the two lines below */}
                 <CreatorBadge address={campaign.creator} label="Creator" />
                 <CreatorBadge address={campaign.recipient} label="Recipient" />
               </div>

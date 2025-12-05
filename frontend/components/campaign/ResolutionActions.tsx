@@ -33,6 +33,8 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
         functionName: 'contributions',
         args: userAddress ? [userAddress] : undefined,
       },
+      // Check if funds are already withdrawn
+      { ...campaignContract, functionName: 'withdrawn' },
     ],
     query: {
       enabled: true,
@@ -43,6 +45,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
   const outcomeYes = campaignData?.[1]?.result as boolean | undefined;
   const recipient = campaignData?.[2]?.result as string | undefined;
   const userContribution = userAddress ? (campaignData?.[3]?.result as bigint | undefined) : 0n;
+  const withdrawn = campaignData?.[4]?.result as boolean | undefined;
 
   // Withdraw contract write
   const {
@@ -71,6 +74,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
 
   // Handle withdraw
   const handleWithdraw = () => {
+    if (withdrawn) return;
     resetWithdraw();
     writeWithdraw({
       address: campaignAddress as `0x${string}`,
@@ -98,7 +102,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
   // Handle successful withdraw
   useEffect(() => {
     if (isWithdrawSuccess) {
-      showToast('Funds withdrawn successfully! 🎉', 'success');
+      showToast('Funds withdrawn successfully.', 'success');
       refetch();
     }
   }, [isWithdrawSuccess, refetch]);
@@ -106,7 +110,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
   // Handle successful refund
   useEffect(() => {
     if (isRefundSuccess) {
-      showToast('Refund claimed successfully! 💰', 'success');
+      showToast('Refund processed successfully.', 'success');
       refetch();
     }
   }, [isRefundSuccess, refetch]);
@@ -151,7 +155,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
     <>
       {/* Toast Notification */}
       {toast.show && (
-        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
+        <div className="fixed top-4 right-4 z-[9999] animate-in slide-in-from-top-2 fade-in duration-300">
           <div
             className={`glass-panel p-4 flex items-center gap-3 min-w-[300px] ${
               toast.type === 'success' ? 'border-secondary' : 'border-primary'
@@ -159,7 +163,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
           >
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                toast.type === 'success' ? 'bg-secondary/20' : 'bg-primary/20'
+                toast.type === 'success' ? 'bg-secondary/10' : 'bg-primary/10'
               }`}
             >
               {toast.type === 'success' ? (
@@ -216,9 +220,9 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
           <div className="space-y-4">
             {/* Success Header */}
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0 border border-secondary/20">
                 <svg
-                  className="w-7 h-7 text-secondary"
+                  className="w-6 h-6 text-secondary"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -232,9 +236,9 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-secondary">Campaign Successful!</h3>
+                <h3 className="text-xl font-bold text-secondary">Campaign Successful</h3>
                 <p className="text-sm text-text-muted">
-                  The oracle verified the goal was achieved.
+                  The oracle has verified that the goal was achieved.
                 </p>
               </div>
             </div>
@@ -242,20 +246,32 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
             {/* Recipient Actions */}
             {isRecipient ? (
               <div className="pt-4 border-t border-border space-y-4">
-                <div className="bg-secondary/10 rounded-[var(--radius-box)] p-4">
+                <div className={`rounded-[var(--radius-box)] p-4 border transition-colors duration-300 ${
+                  withdrawn 
+                    ? 'bg-secondary/5 border-secondary/20' 
+                    : 'bg-secondary/10 border-transparent'
+                }`}>
                   <p className="text-sm text-text-main">
-                    <span className="font-semibold text-secondary">You are the recipient.</span>{' '}
-                    Withdraw the campaign funds to your wallet.
+                    <span className="font-semibold text-secondary">Recipient Status:</span>{' '}
+                    {withdrawn 
+                      ? "Funds have been successfully withdrawn to your wallet."
+                      : "Action required. Please withdraw the campaign funds."}
                   </p>
                 </div>
+                
                 <button
                   onClick={handleWithdraw}
-                  disabled={isWithdrawPending || isWithdrawConfirming || !isConnected}
-                  className="w-full py-4 px-6 rounded-[var(--radius-box)] font-bold text-background 
-                    bg-secondary hover:brightness-110 transition-all duration-200
-                    hover:shadow-[0_8px_25px_-5px_rgba(78,205,196,0.4)]
-                    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none
-                    flex items-center justify-center gap-3 text-lg"
+                  disabled={withdrawn || isWithdrawPending || isWithdrawConfirming || !isConnected}
+                  className={`w-full py-4 px-6 rounded-[var(--radius-box)] font-bold text-lg
+                    transition-all duration-300 flex items-center justify-center gap-3
+                    ${withdrawn
+                      // WITHDRAWN STATE: Hollow, Green, Opacity forced to 100
+                      ? 'border-2 border-secondary bg-transparent text-secondary cursor-default disabled:opacity-100 disabled:text-secondary disabled:border-secondary shadow-none' 
+                      // NOT WITHDRAWN STATE: Solid White, Black Text
+                      : 'bg-white text-black hover:bg-gray-100 hover:shadow-lg border-2 border-transparent' 
+                    }
+                    ${!withdrawn && (isWithdrawPending || isWithdrawConfirming) ? 'opacity-80 cursor-wait' : ''}
+                  `}
                 >
                   {isWithdrawPending || isWithdrawConfirming ? (
                     <>
@@ -274,33 +290,36 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         />
                       </svg>
-                      <span>{isWithdrawPending ? 'Confirm in Wallet...' : 'Processing...'}</span>
+                      <span>Processing Transaction...</span>
                     </>
                   ) : (
                     <>
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span>Withdraw Funds</span>
+                      {withdrawn ? (
+                         // Checkmark Icon for Withdrawn state
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        // Download/Money Icon for Action state
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      )}
+                      <span>{withdrawn ? "Funds Withdrawn" : "Withdraw Funds"}</span>
                     </>
                   )}
                 </button>
               </div>
             ) : (
+              // Non-recipient view
               <div className="pt-4 border-t border-border">
-                <div className="flex items-center gap-3 text-text-muted">
-                  <span className="text-2xl">🎉</span>
-                  <p>Campaign Successful! Funds released to the recipient.</p>
+                <div className="flex items-center gap-3 p-3 rounded bg-background/50">
+                  <div className={`w-2 h-2 rounded-full ${withdrawn ? 'bg-secondary' : 'bg-secondary/50'}`} />
+                  <p className="text-sm text-text-muted">
+                    {withdrawn
+                      ? 'Funds have been successfully withdrawn by the recipient.'
+                      : 'Funds are available for withdrawal by the recipient.'}
+                  </p>
                 </div>
               </div>
             )}
@@ -312,9 +331,9 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
           <div className="space-y-4">
             {/* Failure Header */}
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
                 <svg
-                  className="w-7 h-7 text-primary"
+                  className="w-6 h-6 text-primary"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -330,7 +349,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
               <div>
                 <h3 className="text-xl font-bold text-primary">Campaign Failed</h3>
                 <p className="text-sm text-text-muted">
-                  The goal was not met. Refunds are available.
+                  The goal was not met. Refunds are now available.
                 </p>
               </div>
             </div>
@@ -338,13 +357,10 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
             {/* Contributor Actions */}
             {hasContributed ? (
               <div className="pt-4 border-t border-border space-y-4">
-                <div className="bg-primary/10 rounded-[var(--radius-box)] p-4">
+                <div className="bg-primary/5 rounded-[var(--radius-box)] p-4 border border-primary/10">
                   <p className="text-sm text-text-main">
-                    <span className="font-semibold text-primary">You contributed</span>{' '}
-                    <span className="font-mono font-bold">
-                      ${Number(formattedContribution).toLocaleString()} USDC
-                    </span>{' '}
-                    to this campaign. Claim your refund below.
+                    <span className="font-semibold text-primary">Contribution Found:</span>{' '}
+                    You contributed <span className="font-mono font-bold">${Number(formattedContribution).toLocaleString()} USDC</span>.
                   </p>
                 </div>
                 <button
@@ -352,8 +368,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
                   disabled={isRefundPending || isRefundConfirming || !isConnected}
                   className="w-full py-4 px-6 rounded-[var(--radius-box)] font-bold text-background 
                     bg-primary hover:bg-primary-hover transition-all duration-200
-                    hover:shadow-[0_8px_25px_-5px_rgba(255,107,107,0.4)]
-                    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none
+                    disabled:opacity-50 disabled:cursor-not-allowed
                     flex items-center justify-center gap-3 text-lg"
                 >
                   {isRefundPending || isRefundConfirming ? (
@@ -373,7 +388,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         />
                       </svg>
-                      <span>{isRefundPending ? 'Confirm in Wallet...' : 'Processing...'}</span>
+                      <span>Processing Transaction...</span>
                     </>
                   ) : (
                     <>
@@ -406,7 +421,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <p>Campaign failed. Refunds are enabled for contributors.</p>
+                  <p>Refunding is enabled for all contributors.</p>
                 </div>
               </div>
             )}
@@ -417,7 +432,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
         {!isConnected && (isRecipient || hasContributed) && (
           <div className="mt-4 pt-4 border-t border-border">
             <p className="text-sm text-text-muted text-center">
-              Connect your wallet to perform actions.
+              Please connect your wallet to proceed.
             </p>
           </div>
         )}

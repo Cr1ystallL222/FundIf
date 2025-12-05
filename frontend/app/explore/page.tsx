@@ -3,22 +3,53 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, LayoutGroup, Variants } from "framer-motion";
 import { usePublicClient } from 'wagmi';
-import { parseAbiItem, formatUnits } from 'viem';
+import { type Address } from 'viem';
 import { baseSepolia } from 'viem/chains';
 
+import CampaignCard from '@/components/campaign/CampaignCard';
+
 /* ==================================================================================
-   1. BLOCKCHAIN CONFIG & ABI
+   1. BLOCKCHAIN CONFIG & ABIS
    ================================================================================== */
 
-const CAMPAIGN_FACTORY_ADDRESS = '0x8f77070E6641F59C59C8c502De68E58AF0f7fa43';
+const CAMPAIGN_FACTORY_ADDRESS = '0xc02d6a2c24cd9851f2AF6bd7dFe3Da766466cE8B';
 
-// We only need the Event ABI to fetch the feed efficiently
-const CAMPAIGN_CREATED_EVENT = parseAbiItem(
-  'event CampaignCreated(address indexed campaign, address indexed creator, string title, uint256 goalAmount, bytes32 conditionId, string marketSlug, uint256 deadline)'
-);
+const FACTORY_ABI = [
+  {
+    type: "function",
+    name: "getCampaigns",
+    inputs: [],
+    outputs: [{ type: "address[]", name: "", internalType: "address[]" }],
+    stateMutability: "view"
+  }
+] as const;
+
+const CAMPAIGN_METADATA_ABI = [
+  {
+    type: "function",
+    name: "title",
+    inputs: [],
+    outputs: [{ type: "string" }],
+    stateMutability: "view"
+  },
+  {
+    type: "function",
+    name: "marketSlug",
+    inputs: [],
+    outputs: [{ type: "string" }],
+    stateMutability: "view"
+  },
+  {
+    type: "function",
+    name: "deadline",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view"
+  }
+] as const;
 
 /* ==================================================================================
-   2. DESIGN SYSTEM & ANIMATION CONFIG
+   2. ANIMATION CONFIG
    ================================================================================== */
 
 const LAYOUT_TRANSITION = {
@@ -28,196 +59,80 @@ const LAYOUT_TRANSITION = {
   mass: 1.2
 } as const;
 
-const ANIMATION_CONFIG = {
-  ease: [0.16, 1, 0.3, 1] as const,
-  duration: 0.8,
-  stagger: 0.1,
-};
-
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: {
-      staggerChildren: ANIMATION_CONFIG.stagger,
-      delayChildren: 0.1,
-    },
-  },
+    transition: { staggerChildren: 0.05 }
+  }
 };
 
 const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 40, scale: 0.95, filter: "blur(4px)" },
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
   show: { 
-    opacity: 1, 
-    y: 0, 
-    scale: 1, 
-    filter: "blur(0px)",
-    transition: { 
-      type: "spring",
-      stiffness: 100,
-      damping: 20
-    }
+    opacity: 1, y: 0, scale: 1,
+    transition: { type: "spring", stiffness: 100, damping: 20, duration: 0.4 }
   },
   exit: { 
-    opacity: 0, 
-    scale: 0.95,
-    filter: "blur(4px)",
-    transition: { duration: 0.3 }
-  },
-  hover: {
-    y: -6,
-    transition: { type: "spring", stiffness: 300, damping: 20 }
+    opacity: 0, scale: 0.95, transition: { duration: 0.2 } 
   }
 };
 
 /* ==================================================================================
-   3. TYPES & MOCK DATA
+   3. TYPES & HELPERS
    ================================================================================== */
 
-type CampaignStatus = "live" | "funded" | "ended" | "expired";
-
-interface Campaign {
-  id: string;
-  title: string;
-  description: string;
-  outcome: string;
-  probability: number;
-  raised: number;
-  goal: number;
-  backers: number;
-  status: CampaignStatus;
-  tags: string[];
-  imageUrl: string;
-  chartData: number[];
-  polymarketUrl: string;
-  isVerified: boolean;
-  isCaution: boolean;
-  isOnChain: boolean; // To distinguish real vs mock
-}
-
+// Reduced to the core 7 categories
 const CATEGORIES = [
   { id: "tech", label: "Deep Tech" },
   { id: "politics", label: "Politics" },
   { id: "public_goods", label: "Public Goods" },
   { id: "climate", label: "Climate" },
-  { id: "defense", label: "Defense/Sec" },
-  { id: "social", label: "Social Cause" },
+  { id: "crypto", label: "Crypto" },
   { id: "ai", label: "AI Safety" },
-  { id: "governance", label: "Governance" },
-  { id: "bio", label: "Bio/Acc" },
-  { id: "urban", label: "Urbanism" },
-  { id: "crypto", label: "Protocol" },
+  { id: "science", label: "Science" },
 ];
 
-const generateChartData = (trend: 'up' | 'down' | 'volatile') => {
-  let points = [50];
-  for (let i = 0; i < 20; i++) {
-    const change = Math.random() * 20 - 10 + (trend === 'up' ? 2 : trend === 'down' ? -2 : 0);
-    let next = points[points.length - 1] + change;
-    next = Math.max(0, Math.min(100, next));
-    points.push(next);
-  }
-  return points;
+interface CampaignMetadata {
+  address: string;
+  title: string;
+  marketSlug: string;
+  deadline: number;
+  tags: string[];
+}
+
+const deriveTags = (text: string): string[] => {
+  const t = text.toLowerCase();
+  const tags: string[] = [];
+
+  // Crypto
+  if (t.includes('eth') || t.includes('btc') || t.includes('crypto') || t.includes('base') || t.includes('token') || t.includes('defi') || t.includes('chain')) tags.push('crypto');
+  
+  // Politics
+  if (t.includes('trump') || t.includes('harris') || t.includes('election') || t.includes('vote') || t.includes('policy') || t.includes('law') || t.includes('senate') || t.includes('war') || t.includes('defense')) tags.push('politics');
+  
+  // Climate
+  if (t.includes('climate') || t.includes('carbon') || t.includes('temp') || t.includes('global warming') || t.includes('energy') || t.includes('green')) tags.push('climate');
+  
+  // AI
+  if (t.includes('ai') || t.includes('gpt') || t.includes('model') || t.includes('agi') || t.includes('intelligence')) tags.push('ai');
+  
+  // Science (Merged Bio/DeSci here)
+  if (t.includes('science') || t.includes('research') || t.includes('lab') || t.includes('bio') || t.includes('dna') || t.includes('medicine') || t.includes('health') || t.includes('longevity') || t.includes('study')) tags.push('science');
+  
+  // Tech (Merged Space here)
+  if (t.includes('launch') || t.includes('tech') || t.includes('code') || t.includes('soft') || t.includes('app') || t.includes('space') || t.includes('rocket') || t.includes('mars') || t.includes('orbit')) tags.push('tech');
+  
+  // Default
+  if (tags.length === 0) tags.push('public_goods');
+  
+  return tags;
 };
 
-const MOCK_CAMPAIGNS: Campaign[] = [
-  {
-    id: "mock-1",
-    title: "Stratospheric Aerosol Shield",
-    description: "Deploying reflective sulfur particles. Funds released if global temp rises >1.5°C.",
-    outcome: "Temp > 1.5°C",
-    probability: 82,
-    raised: 425000,
-    goal: 500000,
-    backers: 1240,
-    status: "live",
-    tags: ["climate", "tech"],
-    imageUrl: "https://images.unsplash.com/photo-1534274988754-0d05dd580df8?auto=format&fit=crop&q=80&w=800",
-    chartData: generateChartData('up'),
-    polymarketUrl: "#",
-    isVerified: true,
-    isCaution: false,
-    isOnChain: false,
-  },
-  {
-    id: "mock-2",
-    title: "City Center Car-Free Zone",
-    description: "Lobbying and infrastructure plan for downtown pedestrianization. Conditional on city council vote.",
-    outcome: "Measure B Passes",
-    probability: 64,
-    raised: 85200,
-    goal: 120000,
-    backers: 3400,
-    status: "live",
-    tags: ["urban", "politics"],
-    imageUrl: "https://images.unsplash.com/photo-1517231925375-bf2cb42917a5?auto=format&fit=crop&q=80&w=800",
-    chartData: generateChartData('up'),
-    polymarketUrl: "#",
-    isVerified: true,
-    isCaution: false,
-    isOnChain: false,
-  },
-  {
-    id: "mock-3",
-    title: "Legal Defense: Crypto Privacy",
-    description: "Support for developers facing regulatory action. Funds unlocked if charges are formally filed.",
-    outcome: "Indictment Filed",
-    probability: 25,
-    raised: 890000,
-    goal: 1000000,
-    backers: 3200,
-    status: "funded",
-    tags: ["crypto", "politics", "defense"],
-    imageUrl: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=800",
-    chartData: generateChartData('down'),
-    polymarketUrl: "#",
-    isVerified: true,
-    isCaution: true,
-    isOnChain: false,
-  },
-  {
-    id: "mock-4",
-    title: "Mars Habitat Alpha",
-    description: "Prototype inflatable habitat. Contingent on Starship reaching stable orbit before Q3.",
-    outcome: "Orbital Success",
-    probability: 91,
-    raised: 650000,
-    goal: 800000,
-    backers: 3200,
-    status: "live",
-    tags: ["tech", "public_goods"],
-    imageUrl: "https://images.unsplash.com/photo-1614728853911-1e605289cc29?auto=format&fit=crop&q=80&w=800",
-    chartData: generateChartData('up'),
-    polymarketUrl: "#",
-    isVerified: true,
-    isCaution: false,
-    isOnChain: false,
-  },
-  {
-    id: "mock-5",
-    title: "Universal Flu Vaccine Trial",
-    description: "Funding Phase 2 trials for a mosaic antigen vaccine. Escrow released upon FDA trial approval.",
-    outcome: "FDA Approval",
-    probability: 12,
-    raised: 150000,
-    goal: 900000,
-    backers: 405,
-    status: "live",
-    tags: ["bio", "public_goods"],
-    imageUrl: "https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=800",
-    chartData: generateChartData('down'),
-    polymarketUrl: "#",
-    isVerified: false,
-    isCaution: true,
-    isOnChain: false,
-  },
-];
-
 /* ==================================================================================
-   4. COMPONENTS
+   4. UI COMPONENTS
    ================================================================================== */
 
-// --- Icons ---
 const Icons = {
   Search: ({ className }: { className?: string }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
@@ -228,24 +143,11 @@ const Icons = {
   Check: ({ className }: { className?: string }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12" /></svg>
   ),
-  Target: ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>
-  ),
-  ExternalLink: ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-  ),
-  Shield: ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg>
-  ),
-  Caution: ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-  ),
   ChevronDown: ({ className }: { className?: string }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>
   ),
 };
 
-// --- Typewriter Effect ---
 const Typewriter = () => {
   const words = ["Moonshot.", "Impossible.", "Future.", "Inevitable."];
   const [text, setText] = useState("");
@@ -254,8 +156,8 @@ const Typewriter = () => {
   
   useEffect(() => {
     const currentWord = words[wordIndex];
-    const typeSpeed = isDeleting ? 100 : 200; // Slower
-    const delay = isDeleting ? 0 : 3000; // Longer pause
+    const typeSpeed = isDeleting ? 100 : 200;
+    const delay = isDeleting ? 0 : 3000;
 
     const timeout = setTimeout(() => {
       if (!isDeleting && text === currentWord) {
@@ -279,44 +181,6 @@ const Typewriter = () => {
   );
 };
 
-// --- Sparkline Graph ---
-const Sparkline = ({ data, color }: { data: number[], color: string }) => {
-  const width = 120;
-  const height = 40;
-  const max = 100;
-  const min = 0;
-  
-  const points = data.map((val, i) => {
-    const x = (i / (data.length - 1)) * width;
-    const y = height - ((val - min) / (max - min)) * height;
-    return `${x},${y}`;
-  }).join(' ');
-
-  return (
-    <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-      <path d={`M ${points}`} fill="none" stroke="currentColor" strokeWidth="2" className={color} vectorEffect="non-scaling-stroke" />
-      <path d={`M ${points} L ${width},${height} L 0,${height} Z`} fill="currentColor" className={color} fillOpacity="0.1" />
-    </svg>
-  );
-};
-
-// --- Status Badge ---
-const StatusBadge = ({ status }: { status: CampaignStatus }) => {
-  const styles = {
-    live: "bg-emerald-500 text-black border-emerald-400",
-    funded: "bg-blue-500 text-white border-blue-400",
-    ended: "bg-zinc-600 text-white border-zinc-500",
-    expired: "bg-red-500/20 text-red-400 border-red-500/30",
-  };
-
-  return (
-    <div className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${styles[status]} shadow-lg`}>
-      {status}
-    </div>
-  );
-};
-
-// --- Filter Dropdown ---
 const FilterDropdown = ({ 
   value, 
   onChange 
@@ -370,217 +234,82 @@ const FilterDropdown = ({
   );
 };
 
-// --- Card Component ---
-const CampaignCard = ({ data }: { data: Campaign }) => {
-  const percentage = Math.min((data.raised / data.goal) * 100, 100);
-  
-  const getProbColor = (p: number) => {
-    if (p >= 80) return "text-emerald-400";
-    if (p >= 50) return "text-lime-400";
-    if (p >= 30) return "text-yellow-400";
-    return "text-red-500";
-  };
-
-  const probColor = getProbColor(data.probability);
-  const formatMoney = (n: number) => `$${n.toLocaleString()}`;
-
-  return (
-    <motion.div
-      layout
-      variants={cardVariants}
-      whileHover="hover"
-      transition={LAYOUT_TRANSITION}
-      className="group relative w-full bg-[#09090b] rounded-2xl border border-white/5 hover:border-white/20 overflow-hidden flex flex-col shadow-lg hover:shadow-2xl transition-colors"
-    >
-      {/* 1. Header Image */}
-      <div className="relative h-40 w-full overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0e] to-transparent z-10" />
-        <img 
-          src={data.imageUrl} 
-          alt={data.title}
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out opacity-80 group-hover:opacity-100"
-        />
-        <div className="absolute top-3 left-3 z-20 flex gap-2">
-          <StatusBadge status={data.status} />
-          {data.isOnChain && (
-            <div className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-purple-500/20 text-purple-300 border-purple-500/30 backdrop-blur-md">
-              On-Chain
-            </div>
-          )}
-        </div>
-        
-        {/* Verification / Caution Badges */}
-        <div className="absolute top-3 right-3 z-20 flex gap-1">
-          {data.isVerified && (
-            <div className="bg-blue-500 text-white p-1 rounded-full shadow-lg" title="Verified Creator">
-              <Icons.Shield className="w-3.5 h-3.5" />
-            </div>
-          )}
-          {data.isCaution && (
-            <div className="bg-yellow-500 text-black p-1 rounded-full shadow-lg" title="Experimental Market">
-              <Icons.Caution className="w-3.5 h-3.5" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Content Body */}
-      <div className="flex-1 p-5 flex flex-col bg-[#0c0c0e] -mt-2 relative z-20">
-        
-        {/* Title */}
-        <div className="mb-4">
-          <h3 className="text-lg font-bold text-white leading-tight group-hover:text-blue-400 transition-colors mb-2 line-clamp-2">
-            {data.title}
-          </h3>
-          <p className="text-sm text-zinc-500 leading-relaxed line-clamp-2 mb-4 h-10">
-            {data.description}
-          </p>
-          
-          {/* Distinct Condition Block with Link */}
-          <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg backdrop-blur-sm group/pill hover:bg-white/10 transition-colors">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <Icons.Target className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
-              <span className="text-xs font-medium text-zinc-200 truncate">
-                <span className="text-zinc-500 mr-1">If:</span>
-                {data.outcome}
-              </span>
-            </div>
-            <a 
-              href={data.polymarketUrl} 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-zinc-500 hover:text-blue-400 transition-colors flex-shrink-0"
-              title="View market source"
-            >
-              <Icons.ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
-        </div>
-
-        {/* 3. Funding Progress */}
-        <div className="mt-auto mb-6">
-          <div className="flex justify-between items-end mb-2">
-             <div className="flex flex-col">
-               <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Raised</span>
-               <span className="text-white text-xl font-bold tracking-tight">
-                 {formatMoney(data.raised)}
-               </span>
-             </div>
-             <div className="flex flex-col items-end">
-                <span className="text-[10px] text-zinc-600 uppercase font-bold tracking-wider">Goal</span>
-                <span className="text-zinc-400 text-sm font-mono">
-                  {formatMoney(data.goal)}
-                </span>
-             </div>
-          </div>
-          <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${percentage}%` }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-            />
-          </div>
-        </div>
-
-        {/* 4. Graph & Probability Area */}
-        <div className="pt-4 border-t border-white/5">
-          <div className="flex items-end justify-between gap-4">
-            
-            {/* Left: Probability Big Text */}
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider mb-0.5">Probability</span>
-              <div className="flex items-baseline gap-1">
-                <span className={`text-4xl font-black tracking-tight ${probColor} drop-shadow-lg`}>
-                  {data.probability}%
-                </span>
-              </div>
-            </div>
-
-            {/* Right: Sparkline Graph */}
-            <div className="h-10 w-24 pb-1 opacity-70 group-hover:opacity-100 transition-opacity">
-              <Sparkline data={data.chartData} color={probColor} />
-            </div>
-
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
 /* ==================================================================================
-   5. DATA HOOKS (REAL + MOCK MERGE)
+   5. DATA HOOK
    ================================================================================== */
 
 const useCampaignsFeed = () => {
   const publicClient = usePublicClient({ chainId: baseSepolia.id });
-  const [realCampaigns, setRealCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOnChainCampaigns = async () => {
-      if (!publicClient) {
-        setIsLoading(false);
-        return;
-      }
-
+    const fetchCampaigns = async () => {
+      if (!publicClient) return;
+      
       try {
-        const logs = await publicClient.getLogs({
+        const addresses = await publicClient.readContract({
           address: CAMPAIGN_FACTORY_ADDRESS,
-          event: CAMPAIGN_CREATED_EVENT,
-          fromBlock: 'earliest',
-        });
+          abi: FACTORY_ABI,
+          functionName: 'getCampaigns',
+        }) as Address[];
 
-        // Transform logs into Campaign objects
-        const formatted: Campaign[] = logs.map((log, index) => {
-          const { args } = log;
-          const goal = args.goalAmount ? parseFloat(formatUnits(args.goalAmount, 6)) : 0;
-          
-          // Generate a deterministic pseudo-random probability based on address/slug
-          const pseudoRandomProb = (args.marketSlug?.length || 50) % 100;
+        if (!addresses || addresses.length === 0) {
+          setCampaigns([]);
+          setIsLoading(false);
+          return;
+        }
 
-          return {
-            id: `onchain-${args.campaign}-${index}`,
-            title: args.title || "Untitled Campaign",
-            description: `A community-created prediction market campaign on Base. Market ID: ${args.marketSlug}`,
-            outcome: args.marketSlug || "Unspecified Outcome",
-            probability: pseudoRandomProb, // In prod, fetch from Polymarket API
-            raised: 0, // In prod, fetch balance of campaign address
-            goal: goal,
-            backers: 0, // In prod, fetch events from campaign
-            status: "live",
-            tags: ["crypto", "public_goods"], // Default tags
-            imageUrl: `https://images.unsplash.com/photo-${1550000000000 + index}?auto=format&fit=crop&q=80&w=800`, // Random image fallback
-            chartData: generateChartData('volatile'),
-            polymarketUrl: `https://polymarket.com/event/${args.marketSlug}`,
-            isVerified: false,
-            isCaution: true, // New on-chain campaigns are cautious by default
-            isOnChain: true,
-          };
-        });
+        const contracts = [];
+        for (const addr of addresses) {
+          contracts.push(
+            { address: addr, abi: CAMPAIGN_METADATA_ABI, functionName: 'title' },
+            { address: addr, abi: CAMPAIGN_METADATA_ABI, functionName: 'marketSlug' },
+            { address: addr, abi: CAMPAIGN_METADATA_ABI, functionName: 'deadline' }
+          );
+        }
 
-        setRealCampaigns(formatted.reverse()); // Newest first
-      } catch (error) {
-        console.error("Failed to fetch campaigns:", error);
+        const results = await publicClient.multicall({ contracts });
+        const formatted: CampaignMetadata[] = [];
+        const itemCount = addresses.length;
+
+        for (let i = 0; i < itemCount; i++) {
+          const addr = addresses[i];
+          const titleResult = results[i * 3];
+          const slugResult = results[i * 3 + 1];
+          const deadlineResult = results[i * 3 + 2];
+
+          if (titleResult.status === 'success') {
+             const title = titleResult.result as string;
+             const marketSlug = (slugResult.result as string) || "";
+             const deadline = Number(deadlineResult.result as bigint);
+
+             formatted.push({
+               address: addr,
+               title: title,
+               marketSlug: marketSlug,
+               deadline: deadline,
+               tags: deriveTags(`${title} ${marketSlug}`),
+             });
+          }
+        }
+
+        setCampaigns(formatted.reverse());
+      } catch (err) {
+        console.error("Failed to fetch campaigns:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchOnChainCampaigns();
+    fetchCampaigns();
   }, [publicClient]);
 
-  // Merge Real + Mock
-  const allCampaigns = useMemo(() => {
-    return [...realCampaigns, ...MOCK_CAMPAIGNS];
-  }, [realCampaigns]);
-
-  return { campaigns: allCampaigns, isLoading };
+  return { campaigns, isLoading };
 };
 
 /* ==================================================================================
-   6. MAIN PAGE COMPONENT
+   6. MAIN PAGE
    ================================================================================== */
 
 export default function Explore() {
@@ -611,19 +340,20 @@ export default function Explore() {
     setStatusFilter('live');
   };
 
-  // Filter Logic
   const filteredData = useMemo(() => {
+    const now = Math.floor(Date.now() / 1000);
+
     return campaigns.filter(c => {
       const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase()) || 
-                            c.outcome.toLowerCase().includes(search.toLowerCase());
+                            c.marketSlug.toLowerCase().includes(search.toLowerCase());
       
       const matchesTags = selectedTags.size === 0 || 
                           c.tags.some(t => selectedTags.has(t));
       
-      // Simple status check logic
+      const isExpired = c.deadline < now;
       const matchesStatus = statusFilter === 'live' 
-        ? (c.status === 'live' || c.status === 'funded')
-        : (c.status === 'ended' || c.status === 'expired');
+        ? !isExpired 
+        : isExpired;
 
       return matchesSearch && matchesTags && matchesStatus;
     });
@@ -687,7 +417,6 @@ export default function Explore() {
                   </button>
                 )}
                 
-                {/* Status Filter Dropdown */}
                 <FilterDropdown value={statusFilter} onChange={setStatusFilter} />
               </div>
             </div>
@@ -696,7 +425,7 @@ export default function Explore() {
             <motion.div 
               layout
               transition={LAYOUT_TRANSITION}
-              className="mt-4 flex flex-wrap gap-2"
+              className="mt-6 flex flex-wrap gap-x-2 gap-y-3"
             >
               <AnimatePresence>
                 {CATEGORIES.map((cat) => {
@@ -710,9 +439,9 @@ export default function Explore() {
                       animate={{ opacity: 1, scale: 1 }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }} // Less bounce
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
                       className={`
-                        relative px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-2
+                        relative px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-2 whitespace-nowrap
                         ${isSelected 
                           ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]" 
                           : "bg-zinc-900/50 text-zinc-400 border-white/5 hover:border-white/20 hover:text-zinc-200"}
@@ -730,7 +459,7 @@ export default function Explore() {
                      animate={{ opacity: 1, width: "auto" }}
                      exit={{ opacity: 0, width: 0 }}
                      onClick={clearFilters}
-                     className="px-3 py-1.5 text-xs text-red-400 hover:text-red-300 transition-colors border-b border-transparent hover:border-red-400/50 ml-2"
+                     className="px-3 py-1.5 text-xs text-red-400 hover:text-red-300 transition-colors border-b border-transparent hover:border-red-400/50 ml-2 whitespace-nowrap"
                    >
                      Reset
                    </motion.button>
@@ -744,15 +473,14 @@ export default function Explore() {
         <div className="min-h-[400px]">
           {isLoading ? (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1,2,3].map(i => (
-                  <div key={i} className="h-96 rounded-2xl bg-white/5 animate-pulse" />
+                {[1,2,3,4,5,6].map(i => (
+                  <div key={i} className="h-[500px] rounded-2xl bg-white/5 animate-pulse border border-white/5" />
                 ))}
              </div>
           ) : (
             <LayoutGroup>
               <motion.div 
                 layout
-                transition={LAYOUT_TRANSITION}
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
@@ -761,10 +489,21 @@ export default function Explore() {
                 <AnimatePresence mode="popLayout">
                   {filteredData.length > 0 ? (
                     filteredData.map((campaign) => (
-                      <CampaignCard key={campaign.id} data={campaign} />
+                      <motion.div
+                        key={campaign.address}
+                        layout
+                        initial="hidden"
+                        animate="show"
+                        exit="exit"
+                        variants={cardVariants}
+                        className="h-full"
+                      >
+                        <CampaignCard campaignAddress={campaign.address} />
+                      </motion.div>
                     ))
                   ) : (
                     <motion.div 
+                      key="empty"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -773,7 +512,7 @@ export default function Explore() {
                       <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
                         <Icons.Search className="w-6 h-6 text-zinc-600" />
                       </div>
-                      <h3 className="text-zinc-300 font-medium">No timelines found.</h3>
+                      <h3 className="text-zinc-300 font-medium">No campaigns found.</h3>
                       <p className="text-zinc-500 text-sm mt-1">Try adjusting your filters or search criteria.</p>
                     </motion.div>
                   )}

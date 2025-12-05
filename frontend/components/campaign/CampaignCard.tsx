@@ -385,8 +385,9 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
               {description}
             </p>
             
-            <div className="mb-4">
-              <CreatorBadge address={recipient} label="Recipient" />
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-sm font-semibold text-white">Recipient:</span>
+              <CreatorBadge address={recipient} />
             </div>
 
             {/* Prediction Market Link */}

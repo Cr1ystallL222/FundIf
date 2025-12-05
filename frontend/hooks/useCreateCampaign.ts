@@ -19,7 +19,7 @@ import { baseSepolia } from 'viem/chains';
 /**
  * CampaignFactory contract address on Base Sepolia
  */
-export const CAMPAIGN_FACTORY_ADDRESS = '0x8f77070E6641F59C59C8c502De68E58AF0f7fa43' as const;
+export const CAMPAIGN_FACTORY_ADDRESS = '0xc02d6a2c24cd9851f2AF6bd7dFe3Da766466cE8B' as const;
 
 /**
  * Base Sepolia Chain ID

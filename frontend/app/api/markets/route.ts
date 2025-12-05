@@ -108,19 +108,24 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')?.trim() || '';
     const limitParam = parseInt(searchParams.get('limit') || '', 10);
     const limit = Math.min(
-      isNaN(limitParam) ? 50 : limitParam,
-      100
+      isNaN(limitParam) ? 200 : limitParam,  // Default: 50 → 200
+      1000  // Max cap: 100 → 500
     );
 
     const apiUrl = new URL(`${POLYMARKET_GAMMA_API}/events`);
     apiUrl.searchParams.set('active', 'true');
     apiUrl.searchParams.set('closed', 'false');
-    apiUrl.searchParams.set('limit', String(limit));
-    apiUrl.searchParams.set('order', 'volume24hr');
-    apiUrl.searchParams.set('ascending', 'false');
 
     if (search) {
+      // When searching: fetch MORE results and let API handle relevance
+      apiUrl.searchParams.set('limit', '500');
       apiUrl.searchParams.set('q', search);
+      // Don't order by volume - it filters out relevant but low-volume markets
+    } else {
+      // When browsing (no search): show popular markets
+      apiUrl.searchParams.set('limit', String(limit));
+      apiUrl.searchParams.set('order', 'volume24hr');
+      apiUrl.searchParams.set('ascending', 'false');
     }
 
     const response = await fetch(apiUrl.toString(), {

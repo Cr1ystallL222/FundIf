@@ -4,13 +4,14 @@ import { baseSepolia, base } from 'wagmi/chains';
 import { coinbaseWallet, injected } from 'wagmi/connectors';
 
 export const config = createConfig({
-  chains: [baseSepolia, base], // Both chains needed
+  chains: [baseSepolia, base],
   connectors: [
-    injected(),
+    // 1. Force Smart Wallet as priority for the demo
     coinbaseWallet({
       appName: 'FundIf',
-      preference: 'all',
+      preference: 'smartWalletOnly', // <--- CRITICAL: Forces the Gasless-compatible UI
     }),
+    injected(),
   ],
   storage: createStorage({
     storage: cookieStorage,
@@ -18,7 +19,7 @@ export const config = createConfig({
   ssr: true,
   transports: {
     [baseSepolia.id]: http(),
-    [base.id]: http('https://mainnet.base.org'), // Explicit RPC for Base mainnet
+    [base.id]: http(), 
   },
 });
 

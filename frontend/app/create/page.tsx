@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAccount } from 'wagmi';
+import { useAccount, useSwitchChain } from 'wagmi';
 import { isAddress } from 'viem';
 import { useRouter } from 'next/navigation';
 import { 
@@ -237,11 +237,11 @@ const MarketSearch = ({ onSelect, disabled, error }: { onSelect: (m: Market) => 
 
 export default function CreateCampaignPage() {
   const router = useRouter();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recipientInput, setRecipientInput] = useState("");
   
-  // NEW: State for image handling
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -278,31 +278,25 @@ export default function CreateCampaignPage() {
     }
   }, [address]); 
 
-  // NEW: Handle Image Selection
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate size (e.g., max 4MB)
       if (file.size > 4 * 1024 * 1024) {
         alert("File size too large. Please upload an image under 4MB.");
         return;
       }
       setImageFile(file);
-      // Create local preview URL
       const url = URL.createObjectURL(file);
       setImagePreview(url);
     }
   };
 
-  // NEW: Clear Image
   const clearImage = () => {
     setImageFile(null);
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImagePreview(null);
   };
 
-  // NEW: Upload Image Effect
-  // Watches for blockchain success, then uploads image to server associated with address
   useEffect(() => {
     const uploadImageToServer = async () => {
       if (isSuccess && createdCampaignAddress && imageFile) {
@@ -321,7 +315,6 @@ export default function CreateCampaignPage() {
           console.log("Image uploaded successfully for campaign", createdCampaignAddress);
         } catch (error) {
           console.error("Image upload error:", error);
-          // Note: Campaign is still created on-chain, just image upload failed.
         } finally {
           setIsUploading(false);
         }
@@ -331,7 +324,6 @@ export default function CreateCampaignPage() {
     uploadImageToServer();
   }, [isSuccess, createdCampaignAddress, imageFile]);
 
-  // --- SUBMISSION LOGIC ---
   const onSubmit = (data: FormValues) => {
     if (!isConnected) return;
     setIsSubmitting(true);
@@ -463,13 +455,31 @@ export default function CreateCampaignPage() {
           <motion.div 
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            className="mb-8 bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex items-start gap-3"
+            className="mb-8 bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex items-center justify-between"
           >
-            <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
-            <div>
-              <h3 className="text-sm font-semibold text-amber-200">Wrong Network</h3>
-              <p className="text-xs text-amber-200/80 mt-1">Please switch your wallet to Base Sepolia (Chain ID: {BASE_SEPOLIA_CHAIN_ID}).</p>
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-semibold text-amber-200">Wrong Network</h3>
+                <p className="text-xs text-amber-200/80 mt-1">
+                  Your wallet is on Chain ID {chainId || 'unknown'}. Please switch to Base Sepolia (Chain ID: {BASE_SEPOLIA_CHAIN_ID}).
+                </p>
+              </div>
             </div>
+            <button
+              onClick={() => switchChain({ chainId: BASE_SEPOLIA_CHAIN_ID })}
+              disabled={isSwitchingChain}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0 ml-4"
+            >
+              {isSwitchingChain ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Switching...
+                </>
+              ) : (
+                'Switch Network'
+              )}
+            </button>
           </motion.div>
         )}
 
@@ -500,7 +510,7 @@ export default function CreateCampaignPage() {
                   <InputError message={errors.title?.message} />
                 </div>
 
-                {/* NEW: IMAGE UPLOAD SECTION */}
+                {/* IMAGE UPLOAD SECTION */}
                 <div className="space-y-1">
                   <FormLabel tooltip="Upload a cover image for your campaign card (Max 4MB)">Cover Image</FormLabel>
                   <div className="relative group">
@@ -791,12 +801,10 @@ export default function CreateCampaignPage() {
                 </div>
               </div>
 
-              {/* The Card Preview */}
               <motion.div 
                 className="bg-[#111113] border border-white/10 rounded-xl overflow-hidden shadow-2xl shadow-black/50 backdrop-blur-xl"
                 layout
               >
-                {/* UPDATED: Card Header Image Logic */}
                 <div className="h-32 relative bg-linear-to-br from-zinc-800 to-elevated border-b border-white/5">
                   {imagePreview ? (
                     <img src={imagePreview} alt="Campaign Cover" className="w-full h-full object-cover" />
@@ -813,7 +821,6 @@ export default function CreateCampaignPage() {
                 </div>
 
                 <div className="p-6 space-y-6">
-                  {/* Title & Description */}
                   <div>
                     {watchedValues.title ? (
                       <h2 className="text-xl font-bold text-white leading-tight wrap-break-word">{watchedValues.title}</h2>
@@ -833,7 +840,6 @@ export default function CreateCampaignPage() {
                     </div>
                   </div>
 
-                  {/* The "IF" Logic Block */}
                   <div className="bg-surface border border-white/5 rounded-lg p-4 relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-1 h-full bg-lime-500" />
                     <div className="flex items-center justify-between mb-2">
@@ -861,7 +867,6 @@ export default function CreateCampaignPage() {
                     </div>
                   </div>
 
-                  {/* Progress Bar (Mock) */}
                   <div>
                     <div className="flex justify-between text-xs mb-2">
                       <span className="text-white font-medium">
@@ -876,7 +881,6 @@ export default function CreateCampaignPage() {
                     </div>
                   </div>
 
-                  {/* Metadata Grid */}
                   <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
                     <div>
                       <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Deadline</p>
@@ -897,7 +901,6 @@ export default function CreateCampaignPage() {
                 </div>
               </motion.div>
 
-              {/* Help Card */}
               <div className="mt-6 p-4 rounded-lg border border-dashed border-white/10 bg-white/5">
                 <h4 className="text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-2">
                   <Info className="w-3 h-3" /> How it works

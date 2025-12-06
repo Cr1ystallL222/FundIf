@@ -365,12 +365,17 @@ const Hero = () => {
             </button>
           </Link>
           
-          <Link href="/docs" className="w-full sm:w-auto">
+          <a 
+            href="https://github.com/loganstaples/FundIf" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto"
+          >
             <button className="w-full sm:w-auto px-10 py-5 bg-transparent border border-zinc-700 text-zinc-300 font-medium rounded-sm hover:bg-zinc-800 hover:border-zinc-600 transition-all flex items-center justify-center gap-3 text-base">
               Read Protocol Docs
               <Icons.ArrowRight className="opacity-50" />
             </button>
-          </Link>
+          </a>
         </motion.div>
       </div>
 

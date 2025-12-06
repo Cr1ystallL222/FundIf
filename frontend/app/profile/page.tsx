@@ -15,16 +15,11 @@ import CampaignCard from '@/components/campaign/CampaignCard';
    1. CONFIG & ABIS
    ================================================================================== */
 
-// Extended ABI
+// Extended ABI to include creator fetch if missing in base, 
+// though we will calculate backer positions manually now.
 const ExtendedFactoryABI = [
   ...CampaignFactoryABI,
-  {
-    inputs: [{ internalType: "address", name: "backer", type: "address" }],
-    name: "getCampaignsByBacker",
-    outputs: [{ internalType: "address[]", name: "", type: "address[]" }],
-    stateMutability: "view",
-    type: "function",
-  }
+  // getCampaignsByBacker removed as it does not exist on contract
 ] as const;
 
 // Minimal Metadata ABI
@@ -46,6 +41,17 @@ const CampaignMetadataABI = [
   {
     inputs: [],
     name: "deadline",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  }
+] as const;
+
+// Minimal Contribution ABI to check backer status
+const CampaignContributionABI = [
+  {
+    inputs: [{ internalType: "address", name: "funder", type: "address" }],
+    name: "getContribution",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -182,6 +188,8 @@ export default function ProfilePage() {
   });
 
   // --- 2. LIST DATA (Addresses) ---
+  
+  // A. Creator: Native function exists
   const { data: createdCampaigns, isLoading: createdLoading } = useReadContract({
     address: CAMPAIGN_FACTORY_ADDRESS as `0x${string}`,
     abi: ExtendedFactoryABI,
@@ -190,18 +198,43 @@ export default function ProfilePage() {
     query: { enabled: !!address }
   });
 
-  const { data: backedCampaigns, isLoading: backedLoading } = useReadContract({
+  // B. Backer: Native function DOES NOT exist. We must fetch all and filter.
+  // 1. Get All Campaigns
+  const { data: allCampaigns, isLoading: allCampaignsLoading } = useReadContract({
     address: CAMPAIGN_FACTORY_ADDRESS as `0x${string}`,
-    abi: ExtendedFactoryABI,
-    functionName: 'getCampaignsByBacker',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address }
+    abi: CampaignFactoryABI,
+    functionName: 'getCampaigns',
+    query: { enabled: !!address && viewMode === 'backer' } // Only fetch if looking at backer view
   });
+
+  // 2. Check Contributions on All Campaigns
+  const { data: contributionsResults, isLoading: contributionsLoading } = useReadContracts({
+    contracts: (allCampaigns as `0x${string}`[] || []).map(campaignAddr => ({
+      address: campaignAddr,
+      abi: CampaignContributionABI,
+      functionName: 'getContribution',
+      args: address ? [address] : undefined
+    })),
+    query: { enabled: !!allCampaigns && !!address && viewMode === 'backer' },
+    batchSize: 12
+  });
+
+  // 3. Derive Backed List
+  const backedCampaigns = useMemo(() => {
+    if (!allCampaigns || !contributionsResults) return [];
+    
+    return (allCampaigns as `0x${string}`[]).filter((_, index) => {
+      const result = contributionsResults[index]?.result as bigint;
+      return result && result > 0n;
+    });
+  }, [allCampaigns, contributionsResults]);
+
+  const backedLoading = allCampaignsLoading || contributionsLoading;
 
   // Determine active list
   const campaignsAddresses = useMemo(() => {
-    const raw = viewMode === 'creator' ? createdCampaigns : backedCampaigns;
-    return (raw as `0x${string}`[]) || [];
+    if (viewMode === 'creator') return (createdCampaigns as `0x${string}`[]) || [];
+    return backedCampaigns;
   }, [viewMode, createdCampaigns, backedCampaigns]);
 
   // --- 3. METADATA (Batch Fetching) ---

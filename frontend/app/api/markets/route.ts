@@ -108,8 +108,8 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')?.trim() || '';
     const limitParam = parseInt(searchParams.get('limit') || '', 10);
     const limit = Math.min(
-      isNaN(limitParam) ? 2000 : limitParam,  // Default: 50 → 200
-      10000  // Max cap: 100 → 500
+      isNaN(limitParam) ? 200 : limitParam,  // Default: 50 → 200
+      500  // Max cap: 100 → 500
     );
 
     let events: PolymarketEvent[] = [];

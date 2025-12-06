@@ -6,12 +6,13 @@ import { coinbaseWallet, injected } from 'wagmi/connectors';
 export const config = createConfig({
   chains: [baseSepolia, base],
   connectors: [
-    // 1. Force Smart Wallet as priority for the demo
+    // Coinbase Smart Wallet - GASLESS via Paymaster
     coinbaseWallet({
       appName: 'FundIf',
-      preference: 'smartWalletOnly', // <--- CRITICAL: Forces the Gasless-compatible UI
+      preference: 'smartWalletOnly',
     }),
-    injected(),
+    // MetaMask / other injected wallets - REQUIRES GAS
+    injected({ target: 'metaMask' }),
   ],
   storage: createStorage({
     storage: cookieStorage,
@@ -19,7 +20,7 @@ export const config = createConfig({
   ssr: true,
   transports: {
     [baseSepolia.id]: http(),
-    [base.id]: http(), 
+    [base.id]: http(),
   },
 });
 

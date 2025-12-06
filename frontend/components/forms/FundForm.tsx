@@ -25,7 +25,7 @@ const PAYMASTER_URL = process.env.NEXT_PUBLIC_PAYMASTER_URL;
 
 interface FundFormProps {
   campaignAddress: string;
-  onSuccess?: () => void; // Pass your 'refetchCampaign' function here
+  onSuccess?: (amount: string) => void; 
 }
 
 export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
@@ -42,6 +42,16 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
   });
+
+  // Local state for instant balance updates before RPC catches up
+  const [uiBalance, setUiBalance] = useState<bigint | undefined>(undefined);
+
+  // Sync UI balance when actual chain balance updates
+  useEffect(() => {
+    if (balance !== undefined) {
+      setUiBalance(balance);
+    }
+  }, [balance]);
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: usdcAddr,
@@ -77,29 +87,40 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
   // Wait for standard TX receipts to trigger refresh
   const { isSuccess: isFundTxSuccess } = useWaitForTransactionReceipt({ hash: fundTxHash });
 
-  // --- 4. AUTO-REFRESH LOGIC (The Fix) ---
-  useEffect(() => {
-    if (isBatchSuccess || isFundTxSuccess) {
-      // 1. Clear Input
-      setAmount('');
-      // 2. Refresh User Balance & Allowance
-      refetchBalance();
-      refetchAllowance();
-      // 3. Refresh Parent Data (Total Funded, etc)
-      if (onSuccess) {
-        setTimeout(() => onSuccess(), 1000); // Small delay to allow RPC to update
-      }
-    }
-  }, [isBatchSuccess, isFundTxSuccess, refetchBalance, refetchAllowance, onSuccess]);
-
-
   // --- MATH & LOGIC ---
   const parsedAmount = useMemo(() => {
     try { return amount ? parseUnits(amount, USDC_DECIMALS) : 0n; } catch { return 0n; }
   }, [amount]);
 
+  // --- 4. AUTO-REFRESH LOGIC ---
+  useEffect(() => {
+    if (isBatchSuccess || isFundTxSuccess) {
+      // 1. Capture values before clearing
+      const fundedAmountStr = amount;
+      const fundedAmountBigInt = parsedAmount;
+
+      // 2. INSTANTLY Update User Balance in UI (Optimistic)
+      setUiBalance((prev) => (prev !== undefined ? prev - fundedAmountBigInt : prev));
+
+      // 3. Trigger Parent Update (Optimistic)
+      if (onSuccess && fundedAmountStr) {
+        onSuccess(fundedAmountStr);
+      }
+
+      // 4. Clear Input
+      setAmount('');
+
+      // 5. Trigger Background Refetch
+      refetchBalance();
+      refetchAllowance();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBatchSuccess, isFundTxSuccess, refetchBalance, refetchAllowance]);
+
   const needsApproval = parsedAmount > (allowance ?? 0n);
-  const isInsufficientBalance = (balance ?? 0n) < parsedAmount;
+  // Use uiBalance for validation so the button doesn't flicker enabled/disabled oddly
+  const currentBalance = uiBalance !== undefined ? uiBalance : (balance ?? 0n);
+  const isInsufficientBalance = currentBalance < parsedAmount;
   const isLoading = isBatchPending || isApprovePending || isFundPending;
 
   // --- HANDLERS ---
@@ -124,7 +145,7 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
       contracts,
       capabilities: {
         paymasterService: {
-          url: PAYMASTER_URL || '' // Fixed the undefined error
+          url: PAYMASTER_URL || '' 
         }
       }
     });
@@ -163,7 +184,7 @@ export function FundForm({ campaignAddress, onSuccess }: FundFormProps) {
       <div className="relative group">
         <div className="flex justify-between mb-2 text-xs text-zinc-500 font-medium">
           <span>AMOUNT</span>
-          <span>BALANCE: {balance ? formatUnits(balance, USDC_DECIMALS) : '0'}</span>
+          <span>BALANCE: {currentBalance !== undefined ? formatUnits(currentBalance, USDC_DECIMALS) : '0'}</span>
         </div>
         <div className="relative">
             <input

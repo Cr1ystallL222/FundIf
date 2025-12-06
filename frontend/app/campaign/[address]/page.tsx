@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, ReactNode } from 'react';
+import { use, useState, useEffect, ReactNode, useCallback } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useCampaign } from '@/hooks/useCampaign';
 import { FundForm } from '@/components/forms/FundForm';
@@ -89,10 +89,31 @@ export default function CampaignPage({ params }: CampaignPageProps) {
   const [marketProb, setMarketProb] = useState<number | null>(null);
   const [isMarketLoading, setIsMarketLoading] = useState(false);
 
+  // --- Optimistic UI State ---
+  // Stores the amount the user just funded so we can show it immediately
+  const [optimisticFunding, setOptimisticFunding] = useState(0);
+
+  // Reset optimistic funding when real data comes in from the chain
+  useEffect(() => {
+    setOptimisticFunding(0);
+  }, [campaign]);
+
+  const handleFundSuccess = useCallback((amountStr: string) => {
+    const val = parseFloat(amountStr);
+    if (!isNaN(val)) {
+      // Instantly update UI stats
+      setOptimisticFunding((prev) => prev + val);
+      // Trigger background refetch (delayed slightly to allow block propagation)
+      setTimeout(() => refetch(), 2500);
+    }
+  }, [refetch]);
+
   // --- Logic ---
   const goalAmount = campaign ? parseFloat(campaign.goalAmount) : 0;
-  const totalFunded = campaign ? parseFloat(campaign.totalFunded) : 0;
-  const userContribution = campaign ? parseFloat(campaign.userContribution) : 0;
+  
+  // Include optimistic funding in calculations
+  const totalFunded = (campaign ? parseFloat(campaign.totalFunded) : 0) + optimisticFunding;
+  const userContribution = (campaign ? parseFloat(campaign.userContribution) : 0) + optimisticFunding;
   
   const progressPercentage = goalAmount > 0 ? Math.min((totalFunded / goalAmount) * 100, 100) : 0;
   const isExpired = campaign ? campaign.deadline < new Date() : false;
@@ -387,7 +408,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
                       {canFund ? (
                         <FundForm 
                           campaignAddress={address} 
-                          onSuccess={refetch}
+                          onSuccess={handleFundSuccess}
                         />
                       ) : (
                         <div className="p-4 rounded-lg bg-zinc-800/50 border border-white/5 text-center">

@@ -1,4 +1,3 @@
-// abis/L2ResolverAbi.ts
 export const L2ResolverAbi = [
   {
     inputs: [{ internalType: 'bytes32', name: 'node', type: 'bytes32' }],

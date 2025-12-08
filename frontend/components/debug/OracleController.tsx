@@ -5,9 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ORACLE_ADDRESS } from '@/lib/contracts/addresses';
 import { CampaignABI } from '@/lib/contracts/abis';
 
-/* ==========================================
-   LOCAL ICONS & CONFIG
-   ========================================== */
 const Icons = {
   Tool: ({ className }: { className?: string }) => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>

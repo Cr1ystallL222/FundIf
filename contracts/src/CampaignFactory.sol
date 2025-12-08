@@ -5,7 +5,7 @@ import "./Campaign.sol";
 
 /**
  * @title CampaignFactory
- * @author FundIf Team
+ * @author Logan Staples
  */
 contract CampaignFactory {
     /*//////////////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ contract CampaignFactory {
             description,
             goalAmount,
             conditionId,
-            marketSlug, // NEW: Pass to constructor
+            marketSlug,
             deadline
         );
 

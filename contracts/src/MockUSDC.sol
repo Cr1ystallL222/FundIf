@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  *      which would never be permitted in production. Uses 6 decimals to match 
  *      real USDC on mainnet for seamless migration.
  *
- * @custom:security-contact security@fundif.xyz
  * @custom:hackathon This is a demonstration contract - DO NOT deploy to mainnet
  */
 contract MockUSDC is ERC20 {

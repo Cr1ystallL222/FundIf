@@ -1,4 +1,3 @@
-// components/ui/IdentityVerify.tsx
 import { useState, useEffect, useRef } from 'react';
 import { isAddress, type Address } from 'viem';
 import {
@@ -151,7 +150,7 @@ export default function IdentityVerify({ input, onResolved }: Props) {
 
   if (!input?.trim()) return null;
 
-  // ⏳ LOADING STATE
+  // LOADING STATE
   if (status === 'LOADING') {
     return (
       <div className="mt-2 text-xs text-zinc-500 flex items-center gap-2">
@@ -161,7 +160,7 @@ export default function IdentityVerify({ input, onResolved }: Props) {
     );
   }
 
-  // ❌ ERROR STATE
+  // ERROR STATE
   if (status === 'ERROR') {
     return (
       <div className="mt-2 text-xs text-red-400 flex items-center gap-2">
@@ -173,7 +172,7 @@ export default function IdentityVerify({ input, onResolved }: Props) {
     );
   }
 
-  // ✅ RESOLVED BASENAME - Verified State
+  // RESOLVED BASENAME - Verified State
   if (status === 'RESOLVED_BASENAME' && basename && resolvedAddress) {
     return (
       <div className="mt-3 relative overflow-hidden rounded-xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-3">
@@ -218,7 +217,7 @@ export default function IdentityVerify({ input, onResolved }: Props) {
     );
   }
 
-  // ⚠️ VALID ADDRESS BUT UNVERIFIED - Warning State (Still allows deployment!)
+  // VALID ADDRESS BUT UNVERIFIED - Warning State (Still allows deployment!)
   if (status === 'VALID_ADDRESS' && resolvedAddress) {
     return (
       <div className="mt-3 relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-orange-500/5 p-3">

@@ -1,5 +1,3 @@
-// app/api/markets/route.ts
-
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -68,7 +66,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     
     // ============================================================
-    // PART 1: PROXY LOGIC (Fixes your CORS issue)
+    // PART 1: PROXY LOGIC
     // Handles direct lookups for CampaignCard.tsx
     // ============================================================
     const lookupSlug = searchParams.get('slug');
@@ -101,15 +99,15 @@ export async function GET(request: Request) {
     }
 
     // ============================================================
-    // PART 2: EXISTING LIST/SEARCH LOGIC
+    // PART 2: LIST/SEARCH LOGIC
     // Handles bulk fetching for lists
     // ============================================================
     
     const search = searchParams.get('search')?.trim() || '';
     const limitParam = parseInt(searchParams.get('limit') || '', 10);
     const limit = Math.min(
-      isNaN(limitParam) ? 200 : limitParam,  // Default: 50 → 200
-      500  // Max cap: 100 → 500
+      isNaN(limitParam) ? 200 : limitParam,
+      500
     );
 
     let events: PolymarketEvent[] = [];

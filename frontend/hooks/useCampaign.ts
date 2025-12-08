@@ -1,5 +1,3 @@
-// hooks/useCampaign.ts
-
 'use client';
 
 import { useMemo } from 'react';
@@ -9,7 +7,6 @@ import type { Address } from 'viem';
 
 const USDC_DECIMALS = 6;
 
-// Expanded ABI to include 'contributions' mapping and 'marketSlug'
 const campaignAbi = [
   {
     "type": "constructor",
@@ -364,12 +361,11 @@ export function useCampaign(campaignAddress: string) {
       { address, abi: campaignAbi, functionName: 'totalFunded' },
       { address, abi: campaignAbi, functionName: 'deadline' },
       { address, abi: campaignAbi, functionName: 'conditionId' },
-      { address, abi: campaignAbi, functionName: 'marketSlug' }, // ADDED THIS
+      { address, abi: campaignAbi, functionName: 'marketSlug' },
       { address, abi: campaignAbi, functionName: 'creator' },
       { address, abi: campaignAbi, functionName: 'recipient' },
       { address, abi: campaignAbi, functionName: 'resolved' },
       { address, abi: campaignAbi, functionName: 'outcomeYes' },
-      // NEW: Fetch User Contribution
       { 
         address, 
         abi: campaignAbi, 
@@ -395,7 +391,7 @@ export function useCampaign(campaignAddress: string) {
       totalFundedResult,
       deadlineResult,
       conditionIdResult,
-      marketSlugResult, // Destructure New Field
+      marketSlugResult,
       creatorResult,
       recipientResult,
       resolvedResult,
@@ -410,7 +406,7 @@ export function useCampaign(campaignAddress: string) {
       totalFunded: totalFundedResult.result ? formatUnits(totalFundedResult.result as bigint, USDC_DECIMALS) : '0',
       deadline: new Date(Number(deadlineResult.result || 0n) * 1000),
       conditionId: (conditionIdResult.result as `0x${string}`) || '0x',
-      marketSlug: (marketSlugResult.result as string) || '', // Map New Field
+      marketSlug: (marketSlugResult.result as string) || '',
       creator: (creatorResult.result as Address) || '0x',
       recipient: (recipientResult.result as Address) || '0x',
       resolved: (resolvedResult.result as boolean) || false,

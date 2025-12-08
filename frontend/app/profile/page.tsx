@@ -1,4 +1,3 @@
-// app/profile/page.tsx
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -15,11 +14,8 @@ import CampaignCard from '@/components/campaign/CampaignCard';
    1. CONFIG & ABIS
    ================================================================================== */
 
-// Extended ABI to include creator fetch if missing in base, 
-// though we will calculate backer positions manually now.
 const ExtendedFactoryABI = [
   ...CampaignFactoryABI,
-  // getCampaignsByBacker removed as it does not exist on contract
 ] as const;
 
 // Minimal Metadata ABI
@@ -165,7 +161,7 @@ const AssetRow = ({ label, value, icon, symbol, symbolPosition = 'right' }: Asse
 );
 
 /* ==================================================================================
-   4. MAIN PAGE LOGIC (Optimized)
+   4. MAIN PAGE LOGIC
    ================================================================================== */
 
 export default function ProfilePage() {
@@ -306,7 +302,7 @@ export default function ProfilePage() {
     );
   }
 
-  // PERFORMANCE OPTIMIZATION:
+  // FOR PERFORMANCE OPTIMIZATION:
   // Do NOT block the whole page on loading. Only block if we don't have basic account info.
   // The grid will handle its own loading state.
   if (!mounted) return <div className="min-h-screen bg-[#09090b]" />;

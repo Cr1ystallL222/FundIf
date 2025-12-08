@@ -294,7 +294,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
                 )}
               </div>
 
-              {/* Verified Badges Section - UPDATED with Explicit Labels */}
+              {/* Verified Badges Section */}
               <div className="flex flex-wrap gap-8 p-4 bg-white/5 rounded-xl border border-white/5">
                 <div className="flex items-center gap-2">
                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Creator:</span>

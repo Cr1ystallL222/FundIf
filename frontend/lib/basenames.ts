@@ -1,4 +1,3 @@
-// lib/basenames.ts
 import {
   Address,
   createPublicClient,
@@ -60,7 +59,6 @@ function convertChainIdToCoinType(chainId: number): number {
 
 /**
  * Convert an address to the reverse node bytes for looking up its name
- * This is the key function that was missing!
  */
 function convertReverseNodeToBytes(address: Address, chainId: number): `0x${string}` {
   const addressFormatted = address.toLowerCase() as Address;

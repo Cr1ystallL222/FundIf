@@ -6,7 +6,7 @@ import "./interfaces/IOracle.sol";
 
 /**
  * @title Campaign
- * @author FundIf Team
+ * @author Logan Staples
  * @notice Core escrow contract for a prediction-gated crowdfunding campaign
  */
 contract Campaign {
@@ -47,7 +47,6 @@ contract Campaign {
 
     uint256 public totalFunded;
     
-    // NEW: Track yield separately for the "DeFi" narrative
     uint256 public yieldGenerated; 
 
     mapping(address => uint256) public contributions;
@@ -64,9 +63,9 @@ contract Campaign {
 
     event Funded(address indexed funder, uint256 amount, uint256 totalFunded);
     event Resolved(bool outcome);
-    event Withdrawn(address indexed recipient, uint256 amount, uint256 yield); // Updated event
+    event Withdrawn(address indexed recipient, uint256 amount, uint256 yield);
     event Refunded(address indexed funder, uint256 amount);
-    event YieldAccrued(uint256 amount); // New Event
+    event YieldAccrued(uint256 amount);
 
     // ============ Constructor ============
 
@@ -114,7 +113,7 @@ contract Campaign {
     }
 
     /* 
-     * @notice HACKATHON FEATURE: Simulate Aave Yield
+     * @notice Simulate Aave Yield
      * @dev Allows anyone to deposit extra USDC to simulate interest accrual
      * Pitch: "Our contract puts capital to work in Aave while waiting for resolution."
      */
@@ -129,7 +128,6 @@ contract Campaign {
 
     function resolve() external {
         require(!resolved, "Already resolved");
-        // HACKATHON SHORTCUT: Check deadline only if logic requires, otherwise oracle decides
         require(oracle.isResolved(conditionId), "Oracle not resolved yet");
 
         resolved = true;
@@ -182,9 +180,9 @@ contract Campaign {
     }
 
     /* 
-     * @notice CIRCLE BOUNTY: BATCH "PUSH" REFUND
+     * @notice BATCH "PUSH" REFUND
      * @dev Allows backend to automatically push refunds to users
-     * Pitch: "Programmable wallets mean users don't have to 'claim' refunds."
+     * Pitch: Programmable wallets mean users don't have to claim refunds.
      */
     function adminBatchRefund(address[] calldata _contributors) external {
         require(resolved, "Not resolved yet");

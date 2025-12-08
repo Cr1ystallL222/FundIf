@@ -5,7 +5,7 @@ import "./interfaces/IOracle.sol";
 
 /**
  * @title MockOracle
- * @author FundIf Team
+ * @author Logan Staples
  * @notice A mock prediction market oracle for demonstration and testing purposes
  * @dev Simulates a prediction market oracle like Polymarket or UMA for hackathon demo.
  *      In production, this would be replaced with actual oracle integrations.

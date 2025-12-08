@@ -3,16 +3,12 @@ pragma solidity 0.8.30;
 
 /**
  * @title IOracle
- * @author FundIf Team
+ * @author Logan Staples
  * @notice Interface for querying prediction market outcomes in the FundIf platform
  * @dev This interface abstracts the oracle layer for prediction market resolution.
  * Campaign contracts use this to determine whether funds should be released to
  * project creators (if the prediction resolved YES) or refunded to contributors
  * (if the prediction resolved NO or remains unresolved).
- *
- * The interface is designed to be implementation-agnostic, allowing integration
- * with various oracle providers such as UMA, Chainlink, or custom Polymarket
- * adapters in production environments.
  */
 interface IOracle {
     /**

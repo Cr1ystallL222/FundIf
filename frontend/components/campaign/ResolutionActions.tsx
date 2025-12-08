@@ -265,9 +265,7 @@ export default function ResolutionActions({ campaignAddress }: ResolutionActions
                   className={`w-full py-4 px-6 rounded-[var(--radius-box)] font-bold text-lg
                     transition-all duration-300 flex items-center justify-center gap-3
                     ${withdrawn
-                      // WITHDRAWN STATE: Hollow, Green, Opacity forced to 100
                       ? 'border-2 border-secondary bg-transparent text-secondary cursor-default disabled:opacity-100 disabled:text-secondary disabled:border-secondary shadow-none' 
-                      // NOT WITHDRAWN STATE: Solid White, Black Text
                       : 'bg-white text-black hover:bg-gray-100 hover:shadow-lg border-2 border-transparent' 
                     }
                     ${!withdrawn && (isWithdrawPending || isWithdrawConfirming) ? 'opacity-80 cursor-wait' : ''}

@@ -1,5 +1,3 @@
-// hooks/useCreateCampaign.ts
-
 'use client';
 
 import { useCallback, useEffect, useMemo } from 'react';
@@ -370,7 +368,6 @@ export interface UseCreateCampaignReturn {
 
 /**
  * Toast notification helper
- * Replace these with your actual toast implementation (e.g., react-hot-toast, sonner, etc.)
  */
 const toast = {
   success: (message: string, options?: { description?: string }) => {

@@ -117,10 +117,10 @@ const deriveTags = (text: string): string[] => {
   // AI
   if (t.includes('ai') || t.includes('gpt') || t.includes('model') || t.includes('agi') || t.includes('intelligence')) tags.push('ai');
   
-  // Science (Merged Bio/DeSci here)
+  // Science
   if (t.includes('science') || t.includes('research') || t.includes('lab') || t.includes('bio') || t.includes('dna') || t.includes('medicine') || t.includes('health') || t.includes('longevity') || t.includes('study')) tags.push('science');
   
-  // Tech (Merged Space here)
+  // Tech
   if (t.includes('launch') || t.includes('tech') || t.includes('code') || t.includes('soft') || t.includes('app') || t.includes('space') || t.includes('rocket') || t.includes('mars') || t.includes('orbit')) tags.push('tech');
   
   // Default

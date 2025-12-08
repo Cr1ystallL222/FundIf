@@ -1,4 +1,3 @@
-// components/campaign/CampaignCard.tsx
 'use client';
 
 import Link from 'next/link';
@@ -8,7 +7,6 @@ import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import { CreatorBadge } from '@/components/ui/CreatorBadge';
 
-// Ensure ABI includes marketSlug
 const CampaignABI = [
   {
     type: 'function',
@@ -360,7 +358,6 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
       >
         {/* IMAGE CONTAINER */}
         <div className="relative h-40 w-full overflow-hidden bg-[#18181b]">
-          {/* This div serves as the gradient fallback */}
           <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-black z-0" />
           
           <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0e] to-transparent z-10" />

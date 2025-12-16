@@ -81,46 +81,7 @@ const TooltipProvider = ({ children }: { children: ReactNode }) => {
     setState(prev => prev.id === id ? { ...prev, visible: false } : prev);
   }, []);
 
-  return (
-    const TooltipProvider = ({ children }: { children: ReactNode }) => {
-      const [state, setState] = useState<TooltipState>({ content: '', x: 0, y: 0, visible: false, id: '' });
-      const timer = useRef<NodeJS.Timeout | null>(null);
-    
-      const showTooltip = useCallback((id: string, content: string, x: number, y: number) => {
-        if (timer.current) clearTimeout(timer.current);
-        timer.current = setTimeout(() => setState({ content, x, y, visible: true, id }), 100);
-      }, []);
-    
-      const hideTooltip = useCallback((id: string) => {
-        if (timer.current) clearTimeout(timer.current);
-        setState(prev => prev.id === id ? { ...prev, visible: false } : prev);
-      }, []);
-    
-      // --- ИСПРАВЛЕНИЕ НИЖЕ ---
-      return (
-        // Используем Context.Provider и передаем в него value
-        <TooltipContext.Provider value={{ showTooltip, hideTooltip }}>
-          {children}
-          <AnimatePresence>
-            {state.visible && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96, y: 4 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96, y: 2 }}
-                transition={{ duration: 0.15 }}
-                className="fixed z-[9999] pointer-events-none px-3 py-2 rounded-md border border-lime-400/30 bg-[#111113] shadow-[0_0_30px_-10px_rgba(163,230,53,0.2)]"
-                style={{ left: state.x, top: state.y - 16, transform: 'translate(-50%, -100%)' }}
-              >
-                <div className="text-[11px] font-mono text-lime-400 uppercase tracking-wide">
-                  {state.content}
-                </div>
-                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-lime-900/50" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </TooltipContext.Provider>
-      );
-    };
+ 
 
 const useTooltip = (id: string, content: string) => {
   const context = useContext(TooltipContext);

@@ -78,10 +78,7 @@ const RainingLetters: React.FC = () => {
   }
 
   return (
-    <div
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
-      suppressHydrationWarning
-    >
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
       {letters.map(letter => (
         <motion.div
           key={letter.id}
@@ -94,7 +91,6 @@ const RainingLetters: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: letter.opacity }}
           transition={{ duration: 0.1 }}
-          suppressHydrationWarning
         >
           {letter.char}
         </motion.div>

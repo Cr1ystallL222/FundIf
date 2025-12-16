@@ -9,14 +9,23 @@ import React, {
   ReactNode,
 } from 'react';
 import Link from 'next/link';
-import { 
-  motion, 
-  AnimatePresence, 
+import dynamic from 'next/dynamic';
+import {
+  motion,
+  AnimatePresence,
   useInView,
   Variants
 } from 'framer-motion';
-import RainingLetters from '@/components/ui/modern-animated-hero-section';
-import { MatrixText } from '@/components/ui/matrix-text';
+
+// Dynamic imports to prevent SSR issues
+const RainingLetters = dynamic(() => import('@/components/ui/modern-animated-hero-section'), {
+  ssr: false,
+  loading: () => null
+});
+const MatrixText = dynamic(() => import('@/components/ui/matrix-text').then(mod => ({ default: mod.MatrixText })), {
+  ssr: false,
+  loading: () => null
+});
 import { 
     CircleDollarSign, 
     Lock, 
@@ -280,13 +289,13 @@ const ValueCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc
 
 export default function Home() {
   return (
-    <TooltipProvider suppressHydrationWarning>
-      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden" suppressHydrationWarning>
+    <TooltipProvider>
+      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
         
         <RainingLetters />
 
         {/* SECTION: HOW IT WORKS (LOGIC) */}
-        <section className="py-32 px-6 border-b border-white/5 bg-[#050505]" suppressHydrationWarning>
+        <section className="py-32 px-6 border-b border-white/5 bg-[#050505]">
           <Reveal className="text-center mb-10">
             <h2 className="text-sm font-mono text-lime-400 uppercase tracking-widest mb-4">Architecture</h2>
             <h3 className="text-3xl md:text-4xl font-bold text-white">
@@ -310,7 +319,7 @@ export default function Home() {
         </section>
 
         {/* SECTION: VALUE PROPS */}
-        <section className="py-32 px-6 border-b border-white/5" suppressHydrationWarning>
+        <section className="py-32 px-6 border-b border-white/5">
           <div className="max-w-6xl mx-auto">
             <Reveal className="mb-16 max-w-3xl">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
@@ -344,7 +353,7 @@ export default function Home() {
         </section>
 
         {/* SECTION: PROCESS TIMELINE */}
-        <section className="py-32 px-6 bg-gradient-to-b from-[#09090b] to-[#000]" suppressHydrationWarning>
+        <section className="py-32 px-6 bg-gradient-to-b from-[#09090b] to-[#000]">
           <div className="max-w-4xl mx-auto">
             <Reveal className="mb-20 text-center">
                <h2 className="text-3xl font-bold text-white">System Operations</h2>
@@ -381,7 +390,7 @@ export default function Home() {
         </section>
 
         {/* CTA FOOTER */}
-        <section className="py-32 px-6 border-t border-white/5 text-center" suppressHydrationWarning>
+        <section className="py-32 px-6 border-t border-white/5 text-center">
           <Reveal>
             <div className="max-w-2xl mx-auto">
               <h2 className="text-5xl font-bold text-white mb-8 tracking-tight">Ready to build?</h2>

@@ -59,17 +59,18 @@ export const MatrixText: React.FC<MatrixTextProps> = ({
 
   // Don't render anything on server to prevent hydration mismatch
   if (!isClient) {
-    return <span className={className}>{text}</span>;
+    return <span className={className} suppressHydrationWarning>{text}</span>;
   }
 
   return (
-    <span className={className}>
+    <span className={className} suppressHydrationWarning>
       {displayedText}
       {displayedText.length < text.length && showCursor && (
         <motion.span
           animate={{ opacity: [1, 0, 1] }}
           transition={{ duration: 0.8, repeat: Infinity }}
           className="inline-block w-0.5 h-[1em] bg-lime-400 ml-0.5"
+          suppressHydrationWarning
         />
       )}
     </span>

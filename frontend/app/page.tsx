@@ -290,7 +290,7 @@ const ValueCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc
 export default function Home() {
   return (
     <TooltipProvider>
-      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
+      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden" suppressHydrationWarning={true}>
         
         <RainingLetters />
 

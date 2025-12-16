@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 
 interface MatrixTextProps {
   text: string;
@@ -18,42 +18,48 @@ export const MatrixText: React.FC<MatrixTextProps> = ({
 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
+  const cursorTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Clear any existing cursor timer
+    if (cursorTimerRef.current) {
+      clearInterval(cursorTimerRef.current);
+    }
+
+    // Start typing animation
     let index = 0;
-    const timer = setInterval(() => {
+    const typingTimer = setInterval(() => {
       if (index < text.length) {
-        setDisplayedText(prev => prev + text[index]);
+        setDisplayedText(text.slice(0, index + 1));
         index++;
       } else {
-        clearInterval(timer);
+        clearInterval(typingTimer);
       }
     }, typingSpeed);
 
-    return () => clearInterval(timer);
-  }, [text, typingSpeed]);
-
-  useEffect(() => {
-    const cursorTimer = setInterval(() => {
+    // Start cursor blinking
+    cursorTimerRef.current = setInterval(() => {
       setShowCursor(prev => !prev);
     }, cursorBlinkSpeed);
 
-    return () => clearInterval(cursorTimer);
-  }, [cursorBlinkSpeed]);
+    return () => {
+      clearInterval(typingTimer);
+      if (cursorTimerRef.current) {
+        clearInterval(cursorTimerRef.current);
+      }
+    };
+  }, [text, typingSpeed, cursorBlinkSpeed]);
 
   return (
     <span className={className}>
       {displayedText}
-      <AnimatePresence>
-        {displayedText.length < text.length && showCursor && (
-          <motion.span
-            initial={{ opacity: 1 }}
-            animate={{ opacity: [1, 0, 1] }}
-            transition={{ duration: 0.8, repeat: Infinity }}
-            className="inline-block w-0.5 h-[1em] bg-lime-400 ml-0.5"
-          />
-        )}
-      </AnimatePresence>
+      {displayedText.length < text.length && showCursor && (
+        <motion.span
+          animate={{ opacity: [1, 0, 1] }}
+          transition={{ duration: 0.8, repeat: Infinity }}
+          className="inline-block w-0.5 h-[1em] bg-lime-400 ml-0.5"
+        />
+      )}
     </span>
   );
 };

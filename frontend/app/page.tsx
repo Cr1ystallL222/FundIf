@@ -12,45 +12,26 @@ import Link from 'next/link';
 import { 
   motion, 
   AnimatePresence, 
-  useScroll, 
-  useTransform,
   useInView,
   Variants
 } from 'framer-motion';
+import RainingLetters from '@/components/ui/modern-animated-hero-section';
+import { MatrixText } from '@/components/ui/matrix-text';
+import { 
+    CircleDollarSign, 
+    Lock, 
+    CheckCircle, 
+    XCircle, 
+    GitBranch,
+    Shield,
+    Scale,
+    Check,
+    X,
+    IdCard,
+    ArrowRight,
+    CornerDownRight
+} from 'lucide-react';
 
-// ============================================================================
-// 1. ICONS & ASSETS
-// ============================================================================
-
-const Icons = {
-  ArrowRight: ({ className = "" }) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" className={className}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-  ),
-  CornerDownRight: ({ className = "" }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" className={className}><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>
-  ),
-  GitBranch: ({ className = "" }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" className={className}><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
-  ),
-  Shield: ({ className = "" }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-  ),
-  Scale: ({ className = "" }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" className={className}><path d="M12 3v19"/><path d="M5 8h14"/><path d="M2 13a3 3 0 0 0 3 3h0a3 3 0 0 0 3-3"/><path d="M16 13a3 3 0 0 0 3 3h0a3 3 0 0 0 3-3"/></svg>
-  ),
-  Lock: ({ className = "" }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" className={className}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-  ),
-  Check: ({ className = "" }) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" className={className}><polyline points="20 6 9 17 4 12"/></svg>
-  ),
-  X: ({ className = "" }) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-  ),
-  IdCard: ({ className = "" }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" className={className}><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><line x1="15" y1="8" x2="17" y2="8"/><line x1="15" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
-  )
-};
 
 // ============================================================================
 // 2. UTILITIES & ANIMATIONS
@@ -71,15 +52,6 @@ const Reveal = ({ children, delay = 0, className = "" }: { children: ReactNode, 
   );
 };
 
-// FIXED: Renamed from 'pathVariants' to 'lineDrawVariants' to match usage in LogicVisualizer
-const lineDrawVariants: Variants = {
-  hidden: { pathLength: 0, opacity: 0 },
-  visible: { 
-    pathLength: 1, 
-    opacity: 1, 
-    transition: { duration: 1.2, ease: "easeInOut" } 
-  }
-};
 
 // ============================================================================
 // 3. TOOLTIP SYSTEM
@@ -140,252 +112,124 @@ const useTooltip = (id: string, content: string) => {
   };
 };
 
+
 // ============================================================================
-// 4. COMPONENT: LOGIC VISUALIZER (Fixed Logic Engine)
+// 4. COMPONENT: LOGIC VISUALIZER (Final Animated Version)
 // ============================================================================
 
 const LogicVisualizer = () => {
-  const containerRef = useRef(null);
-  const isInView = useInView(containerRef, { once: true, margin: "-100px" });
-  
-  return (
-    <div ref={containerRef} className="relative w-full max-w-7xl mx-auto hidden md:block">
-      
-      {/* Diagram Container */}
-      <div className="relative bg-[#0a0a0c] border border-white/10 rounded-xl p-16 overflow-hidden shadow-2xl">
-        {/* Tech Grid Background */}
-        <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px]" />
+    const containerRef = useRef(null);
+    const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
-        {/* Labels */}
-        <div className="absolute top-6 left-6 text-xs font-mono text-zinc-500 uppercase tracking-widest">// Execution_Flow_V1</div>
-        <div className="absolute top-6 right-6 flex gap-4">
-          <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-500">
-            <div className="w-2 h-2 bg-lime-500 rounded-full animate-pulse" /> LIVE
-          </div>
+    return (
+        <div ref={containerRef} className="relative w-full max-w-7xl mx-auto hidden md:block">
+            <div className="relative bg-neutral-950 border border-white/10 rounded-xl p-16 overflow-hidden">
+                <div className="absolute inset-0 bg-grid-white/[0.02] bg-center [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+                
+                <div className="absolute top-6 left-6 text-xs font-mono text-zinc-500 uppercase tracking-widest">// EXECUTION_FLOW_V1</div>
+                <motion.div 
+                    className="absolute top-6 right-6 flex items-center gap-2 text-xs font-mono text-zinc-500"
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                    <div className="w-2 h-2 bg-lime-400 rounded-full" /> LIVE
+                </motion.div>
+
+                <div className="relative z-10 flex items-center justify-between gap-12 font-mono">
+                    
+                    {/* 1. Input Node */}
+                    <motion.div 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={isInView ? { opacity: 1, x: 0 } : {}}
+                        transition={{ delay: 0.2, duration: 0.5 }}
+                        className="flex flex-col items-center gap-4 p-6 relative group w-48 text-center bg-black/50 border border-white/10 rounded-xl"
+                        {...useTooltip('node-backers', 'USDC Deposits')}
+                    >
+                        <div className="w-24 h-24 bg-zinc-900 border border-zinc-700 rounded-xl flex items-center justify-center">
+                             <span className="font-mono text-blue-400 text-4xl font-bold">$</span>
+                        </div>
+                        <div className="text-center">
+                            <MatrixText text="FUNDING" className="text-sm font-bold text-white uppercase tracking-wider mb-1" />
+                            <div className="text-xs text-zinc-500">Backers Deposit Capital</div>
+                        </div>
+                    </motion.div>
+
+                    {/* Connector 1 */}
+                    <svg className="flex-1 h-px overflow-visible">
+                        <motion.line x1="0" y1="0" x2="100%" y2="0" stroke="#333" strokeWidth="1.5" />
+                        <motion.line
+                            x1="0" y1="0" x2="100%" y2="0"
+                            stroke="#a3e635"
+                            strokeWidth="1.5"
+                            strokeDasharray="4 4"
+                            animate={{ strokeDashoffset: [0, -8] }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        />
+                    </svg>
+
+                    {/* 2. Central Processor (Smart Contract) */}
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                        transition={{ delay: 0.4, duration: 0.5 }}
+                        className="flex flex-col items-center gap-4 p-6 relative group w-48 text-center bg-black/50 border border-amber-500/40 rounded-2xl"
+                        {...useTooltip('node-contract', 'Immutable Logic')}
+                    >
+                        <div className="w-32 h-32 bg-zinc-900 border border-amber-500/20 rounded-2xl flex items-center justify-center relative">
+                            <Lock className="w-12 h-12 text-amber-500" />
+                        </div>
+                        <div className="text-center">
+                             <MatrixText text="SMART CONTRACT" className="text-sm font-bold text-amber-500 uppercase tracking-wider mb-1" />
+                            <div className="text-xs text-zinc-500">Awaits Resolution</div>
+                        </div>
+                    </motion.div>
+
+                    {/* Connector 2 (Split) */}
+                    <div className="relative h-32 w-48 flex items-center justify-center">
+                         <svg className="absolute w-full h-full overflow-visible">
+                            <motion.path d="M0 64 C 60 64, 80 20, 140 20" fill="none" stroke="#a3e635" strokeWidth="1.5" strokeDasharray="4 4" animate={{ strokeDashoffset: [0, -8] }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}/>
+                            <motion.path d="M0 64 C 60 64, 80 108, 140 108" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4 4" animate={{ strokeDashoffset: [0, 8] }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}/>
+                        </svg>
+                    </div>
+
+                    {/* 3. Outputs */}
+                    <div className="flex flex-col gap-8">
+                        <motion.div 
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={isInView ? { opacity: 1, x: 0 } : {}}
+                            transition={{ delay: 1, duration: 0.5 }}
+                            className="flex flex-row items-center gap-4 w-80 p-4 border border-lime-500/20 bg-lime-500/10 rounded-xl"
+                        >
+                            <div className="w-12 h-12 rounded bg-black/50 flex-shrink-0 flex items-center justify-center">
+                                <CheckCircle className="w-6 h-6 text-lime-400"/>
+                            </div>
+                            <div className="text-left">
+                                <div className="text-sm font-bold text-white">CREATOR PAID</div>
+                                <div className="text-xs text-zinc-400">Funds Released</div>
+                            </div>
+                        </motion.div>
+
+                        <motion.div 
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={isInView ? { opacity: 1, x: 0 } : {}}
+                            transition={{ delay: 1.2, duration: 0.5 }}
+                            className="flex flex-row items-center gap-4 w-80 p-4 border border-red-500/20 bg-red-500/10 rounded-xl"
+                        >
+                            <div className="w-12 h-12 rounded bg-black/50 flex-shrink-0 flex items-center justify-center">
+                                <XCircle className="w-6 h-6 text-red-500"/>
+                            </div>
+                            <div className="text-left">
+                                <div className="text-sm font-bold text-white">REFUNDED</div>
+                                <div className="text-xs text-zinc-400">100% Returned</div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div className="relative z-10 flex items-center justify-between gap-12">
-          
-          {/* 1. Input Node */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col items-center gap-6 relative group w-48"
-            {...useTooltip('node-backers', 'USDC Deposits')}
-          >
-            <div className="w-24 h-24 bg-zinc-900 border border-zinc-700 rounded-xl flex items-center justify-center group-hover:border-zinc-400 transition-colors shadow-lg relative">
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white">$</div>
-              <span className="font-mono text-zinc-300 text-2xl font-bold">USDC</span>
-            </div>
-            <div className="text-center">
-              <div className="text-sm font-mono text-white uppercase tracking-wider mb-1">Funding</div>
-              <div className="text-xs text-zinc-500">Backers Deposit Capital</div>
-            </div>
-          </motion.div>
-
-          {/* Connector 1 */}
-          <div className="flex-1 h-0.5 bg-zinc-800 relative overflow-hidden rounded-full">
-            <motion.div 
-              className="absolute inset-0 bg-linear-to-r from-transparent via-lime-500 to-transparent opacity-50"
-              initial={{ x: '-100%' }}
-              animate={isInView ? { x: '100%' } : {}}
-              transition={{ duration: 2, ease: "linear", repeat: Infinity }}
-            />
-          </div>
-
-          {/* 2. Central Processor (Smart Contract) */}
-          <div 
-            className="flex flex-col items-center relative z-20"
-            {...useTooltip('node-contract', 'Immutable Logic')}
-          >
-            {/* Oracle Input - Static (No Animation) */}
-            <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-col items-center h-24 justify-end pb-2">
-              <div className="px-3 py-1.5 bg-[#1a1a1c] border border-zinc-700 rounded text-[10px] font-mono text-zinc-300 whitespace-nowrap mb-2">
-                Polymarket API
-              </div>
-              <div className="w-px h-full bg-zinc-600" />
-              <div className="w-2 h-2 bg-zinc-600 rounded-full -mt-px" />
-            </div>
-
-            {/* Animated Contract Body */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ delay: 0.4 }}
-              className="flex flex-col items-center gap-6"
-            >
-              <div className="w-32 h-32 bg-[#0e0e10] border border-amber-500/40 rounded-2xl flex items-center justify-center shadow-[0_0_50px_-10px_rgba(245,158,11,0.15)] relative">
-                <div className="absolute inset-0 rounded-2xl border border-amber-500/20 animate-pulse" />
-                <div className="text-center space-y-2">
-                  <Icons.Lock className="mx-auto text-amber-500 w-8 h-8" />
-                  <div className="text-[10px] font-mono text-amber-500 uppercase tracking-wider">Escrow<br/>Locked</div>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-mono text-amber-500 uppercase tracking-wider mb-1">Smart Contract</div>
-                <div className="text-xs text-zinc-500">Awaits Resolution</div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Connector 2 (Split) */}
-          <div className="flex-1 relative h-32 w-48">
-            {/* Path YES */}
-            <svg className="absolute top-0 left-0 w-full h-full overflow-visible">
-              <motion.path 
-                d="M0 64 C 60 64, 80 20, 140 20"
-                fill="none"
-                stroke="#84cc16"
-                strokeWidth="2"
-                strokeDasharray="6 6"
-                variants={lineDrawVariants}
-                initial="hidden"
-                animate={isInView ? "visible" : "hidden"}
-              />
-              <motion.path 
-                d="M0 64 C 60 64, 80 108, 140 108"
-                fill="none"
-                stroke="#ef4444"
-                strokeWidth="2"
-                strokeDasharray="6 6"
-                variants={lineDrawVariants}
-                initial="hidden"
-                animate={isInView ? "visible" : "hidden"}
-              />
-            </svg>
-            
-            {/* Conditions Labels */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={isInView ? { opacity: 1 } : {}}
-              transition={{ delay: 1.2 }}
-              className="absolute top-8 right-1/2 translate-x-4 bg-[#111] border border-lime-500/30 text-lime-400 px-2 py-1 text-[10px] font-mono rounded"
-            >
-              IF "YES"
-            </motion.div>
-            <motion.div 
-               initial={{ opacity: 0 }}
-               animate={isInView ? { opacity: 1 } : {}}
-               transition={{ delay: 1.2 }}
-               className="absolute bottom-8 right-1/2 translate-x-4 bg-[#111] border border-red-500/30 text-red-400 px-2 py-1 text-[10px] font-mono rounded"
-            >
-              IF "NO"
-            </motion.div>
-          </div>
-
-          {/* 3. Outputs */}
-          <div className="flex flex-col gap-16">
-             {/* Creator */}
-             <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={isInView ? { opacity: 1, x: 0 } : {}}
-                transition={{ delay: 1.4 }}
-                className="flex items-center gap-4 p-3 rounded-lg border border-lime-500/20 bg-lime-500/5 w-56"
-              >
-                <div className="w-10 h-10 rounded bg-lime-500/20 flex items-center justify-center text-lime-400 shadow-[0_0_15px_-3px_rgba(132,204,22,0.3)]">
-                  <Icons.Check />
-                </div>
-                <div>
-                  <div className="text-xs font-mono text-lime-400 uppercase font-bold">Creator Paid</div>
-                  <div className="text-[10px] text-zinc-400">Funds Released</div>
-                </div>
-             </motion.div>
-
-             {/* Refund */}
-             <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={isInView ? { opacity: 1, x: 0 } : {}}
-                transition={{ delay: 1.6 }}
-                className="flex items-center gap-4 p-3 rounded-lg border border-red-500/20 bg-red-500/5 w-56"
-              >
-                <div className="w-10 h-10 rounded bg-red-500/20 flex items-center justify-center text-red-500 shadow-[0_0_15px_-3px_rgba(239,68,68,0.3)]">
-                  <Icons.X />
-                </div>
-                <div>
-                  <div className="text-xs font-mono text-red-400 uppercase font-bold">Refunded</div>
-                  <div className="text-[10px] text-zinc-400">100% Returned</div>
-                </div>
-             </motion.div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
 
-// ============================================================================
-// 5. COMPONENT: HERO
-// ============================================================================
-
-const Hero = () => {
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 500], [0, 150]);
-  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
-
-  return (
-    <section className="relative pt-32 pb-24 px-6 border-b border-white/5 overflow-hidden">
-      <div className="max-w-4xl mx-auto relative z-10">
-        
-        {/* Headline */}
-        <motion.h1 
-          className="text-6xl md:text-8xl font-bold text-white leading-[0.9] tracking-tighter mb-10"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        >
-          Fund the Future, <br />
-          <span className="text-lime-400">
-            On <span className="underline decoration-4 decoration-lime-400 underline-offset-[12px]">Your</span> Terms.
-          </span>
-        </motion.h1>
-
-        {/* Subhead */}
-        <motion.p 
-          className="text-xl text-zinc-400 max-w-xl leading-relaxed mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.7 }}
-        >
-          A crowdfunding protocol tied to reality. Funds held in escrow and unlock <span className="text-white font-semibold">only</span> if a specific prediction market event resolves to <span className="text-lime-400 font-semibold">YES</span>.
-        </motion.p>
-
-        {/* Buttons */}
-        <motion.div 
-          className="flex flex-col sm:flex-row items-start gap-5"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.7 }}
-        >
-          <Link href="/create" className="w-full sm:w-auto">
-            <button className="w-full sm:w-auto px-10 py-5 bg-white text-black font-bold rounded-sm hover:bg-zinc-200 transition-colors flex items-center justify-center gap-3 text-base group">
-              Create Campaign
-              <Icons.CornerDownRight className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </Link>
-          
-          <a 
-            href="https://github.com/loganstaples/FundIf" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-full sm:w-auto"
-          >
-            <button className="w-full sm:w-auto px-10 py-5 bg-transparent border border-zinc-700 text-zinc-300 font-medium rounded-sm hover:bg-zinc-800 hover:border-zinc-600 transition-all flex items-center justify-center gap-3 text-base">
-              Read Protocol Docs
-              <Icons.ArrowRight className="opacity-50" />
-            </button>
-          </a>
-        </motion.div>
-      </div>
-
-      {/* Background Texture */}
-      <motion.div 
-        style={{ y, opacity }}
-        className="absolute top-0 right-0 w-[800px] h-[800px] bg-[radial-gradient(circle_at_center,rgba(132,204,22,0.05)_0%,transparent_70%)] pointer-events-none mix-blend-screen"
-      />
-    </section>
-  );
-};
 
 // ============================================================================
 // 6. COMPONENT: PROCESS TRACK
@@ -439,13 +283,15 @@ export default function Home() {
     <TooltipProvider>
       <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
         
-        <Hero />
+        <RainingLetters />
 
         {/* SECTION: HOW IT WORKS (LOGIC) */}
         <section className="py-32 px-6 border-b border-white/5 bg-[#050505]">
           <Reveal className="text-center mb-10">
             <h2 className="text-sm font-mono text-lime-400 uppercase tracking-widest mb-4">Architecture</h2>
-            <h3 className="text-3xl md:text-4xl font-bold text-white">The Logic Engine</h3>
+            <h3 className="text-3xl md:text-4xl font-bold text-white">
+				<MatrixText text="The Logic Engine" className="text-3xl md:text-4xl font-bold text-white" />
+			</h3>
           </Reveal>
           
           <LogicVisualizer />
@@ -479,17 +325,17 @@ export default function Home() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <ValueCard 
-                icon={Icons.GitBranch}
+                icon={GitBranch}
                 title="Conditional Triggers"
                 desc="Fund a cause ONLY if a specific event happens. Like donating to a legal defense fund only if charges are filed. This isn't about verifying milestones; it's about programmatic contingency."
               />
               <ValueCard 
-                icon={Icons.IdCard}
+                icon={IdCard}
                 title="Identity & Transparency"
                 desc="Powered by Basenames. You see exactly who you are funding. The contract is verified and open-source, ensuring that once the campaign starts, the creator has zero control over the funds."
               />
               <ValueCard 
-                icon={Icons.Shield}
+                icon={Shield}
                 title="Guaranteed Refunds"
                 desc="There is no middleman to beg for a refund. If the Polymarket oracle resolves the event to NO, the smart contract automatically unlocks 100% of funds for backers to claim."
               />
@@ -510,25 +356,25 @@ export default function Home() {
                 number="01" 
                 title="Define the Condition" 
                 desc="The creator launches a campaign and links it to a specific Polymarket event (e.g., 'Will Candidate X win the primary?'). This sets the 'Truth Source' for the escrow contract."
-                icon={Icons.GitBranch}
+                icon={GitBranch}
               />
               <ProcessCard 
                 number="02" 
                 title="Crowdfund in Escrow" 
-                desc="Backers contribute USDC. Funds are locked in a smart contract. Neither the creator nor FundIf can touch them. The outcome is entirely dependent on the external event."
-                icon={Icons.Lock}
+                desc="Backers contribute USDC. Funds are locked in a a smart contract. Neither the creator nor FundIf can touch them. The outcome is entirely dependent on the external event."
+                icon={Lock}
               />
               <ProcessCard 
                 number="03" 
                 title="Oracle Resolution" 
                 desc="Once the event concludes, the UMA optimistic oracle pushes the definitive result (YES or NO) to our contract on-chain."
-                icon={Icons.Scale}
+                icon={Scale}
               />
                <ProcessCard 
                 number="04" 
                 title="Automatic Settlement" 
                 desc="Logic executes immediately. If YES, funds stream to the creator to execute their vision. If NO, the campaign is voided and backers are automatically refunded."
-                icon={Icons.Shield}
+                icon={Shield}
               />
             </div>
           </div>

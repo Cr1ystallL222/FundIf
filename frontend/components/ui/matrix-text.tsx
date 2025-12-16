@@ -18,9 +18,16 @@ export const MatrixText: React.FC<MatrixTextProps> = ({
 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   const cursorTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
     // Clear any existing cursor timer
     if (cursorTimerRef.current) {
       clearInterval(cursorTimerRef.current);
@@ -48,7 +55,12 @@ export const MatrixText: React.FC<MatrixTextProps> = ({
         clearInterval(cursorTimerRef.current);
       }
     };
-  }, [text, typingSpeed, cursorBlinkSpeed]);
+  }, [text, typingSpeed, cursorBlinkSpeed, isClient]);
+
+  // Don't render anything on server to prevent hydration mismatch
+  if (!isClient) {
+    return <span className={className}>{text}</span>;
+  }
 
   return (
     <span className={className}>

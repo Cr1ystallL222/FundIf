@@ -1,68 +1,100 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const RainingLetters: React.FC = () => {
   const [letters, setLetters] = useState<Array<{ id: number; char: string; x: number; y: number; speed: number; opacity: number }>>([]);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const generateLetters = () => {
-      const newLetters = [];
+    setIsClient(true);
+
+    if (typeof window === 'undefined') return;
+
+    let animationId: number;
+    let lastTime = 0;
+    let letterId = 0;
+
+    const generateNewLetter = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
+      return {
+        id: letterId++,
+        char: chars[Math.floor(Math.random() * chars.length)],
+        x: Math.random() * window.innerWidth,
+        y: -20,
+        speed: Math.random() * 2 + 0.5,
+        opacity: Math.random() * 0.3 + 0.1,
+      };
+    };
 
-      for (let i = 0; i < 50; i++) {
-        newLetters.push({
-          id: i,
-          char: chars[Math.floor(Math.random() * chars.length)],
-          x: Math.random() * window.innerWidth,
-          y: -20,
-          speed: Math.random() * 3 + 1,
-          opacity: Math.random() * 0.5 + 0.1,
+    const animate = (currentTime: number) => {
+      if (currentTime - lastTime >= 50) { // Update every 50ms
+        setLetters(prevLetters => {
+          let newLetters = prevLetters
+            .map(letter => ({
+              ...letter,
+              y: letter.y + letter.speed,
+            }))
+            .filter(letter => letter.y < window.innerHeight + 50);
+
+          // Always maintain at least 20 letters on screen
+          while (newLetters.length < 20) {
+            newLetters.push(generateNewLetter());
+          }
+
+          // Occasionally add new letters for continuous effect
+          if (Math.random() < 0.1 && newLetters.length < 30) {
+            newLetters.push(generateNewLetter());
+          }
+
+          return newLetters;
         });
+        lastTime = currentTime;
       }
-      setLetters(newLetters);
+
+      animationId = requestAnimationFrame(animate);
     };
 
-    generateLetters();
+    // Start with initial letters
+    const initialLetters = [];
+    for (let i = 0; i < 20; i++) {
+      initialLetters.push(generateNewLetter());
+    }
+    setLetters(initialLetters);
 
-    const animateLetters = () => {
-      setLetters(prevLetters =>
-        prevLetters.map(letter => ({
-          ...letter,
-          y: letter.y + letter.speed,
-        })).filter(letter => letter.y < window.innerHeight + 20)
-      );
+    animationId = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
     };
-
-    const interval = setInterval(animateLetters, 50);
-
-    return () => clearInterval(interval);
   }, []);
+
+  // Don't render anything on server to prevent hydration mismatch
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      <AnimatePresence>
-        {letters.map(letter => (
-          <motion.div
-            key={letter.id}
-            initial={{ opacity: 0 }}
-            animate={{
-              opacity: letter.opacity,
-              y: letter.y,
-            }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.1 }}
-            className="absolute text-lime-400 font-mono text-sm"
-            style={{
-              left: letter.x,
-              top: letter.y,
-            }}
-          >
-            {letter.char}
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      {letters.map(letter => (
+        <motion.div
+          key={letter.id}
+          className="absolute text-lime-400 font-mono text-sm select-none"
+          style={{
+            left: letter.x,
+            top: letter.y,
+            opacity: letter.opacity,
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: letter.opacity }}
+          transition={{ duration: 0.1 }}
+        >
+          {letter.char}
+        </motion.div>
+      ))}
     </div>
   );
 };

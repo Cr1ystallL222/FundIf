@@ -5,6 +5,7 @@ contracts/cache/
 # Frontend (for later)
 node_modules/
 .next/
+frontend/FundIf/
 
 # Environment
 .env

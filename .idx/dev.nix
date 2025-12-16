@@ -11,6 +11,7 @@
     # pkgs.python311Packages.pip
     pkgs.nodejs_20
     pkgs.git
+    pkgs.cd frontend 
     # pkgs.nodePackages.nodemon
   ];
 

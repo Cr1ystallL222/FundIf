@@ -26,6 +26,10 @@ const MatrixText = dynamic(() => import('@/components/ui/matrix-text').then(mod 
   ssr: false,
   loading: () => null
 });
+const TypingAnimation = dynamic(() => import('@/components/ui/typing-animation').then(mod => ({ default: mod.TypingAnimation })), {
+  ssr: false,
+  loading: () => <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight opacity-0">Loading...</h2>
+});
 import { 
     CircleDollarSign, 
     Lock, 
@@ -322,10 +326,11 @@ export default function Home() {
         <section className="py-32 px-6 border-b border-white/5">
           <div className="max-w-6xl mx-auto">
             <Reveal className="mb-16 max-w-3xl">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
-                Don't trust promises. <br />
-                Trust <span className="text-lime-400">code</span>.
-              </h2>
+              <TypingAnimation
+                text="Don't trust promises. Trust code."
+                duration={80}
+                className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight"
+              />
               <p className="text-xl text-zinc-400 leading-relaxed">
                 Traditional crowdfunding asks you to believe the creator will follow through. 
                 FundIf binds funds to reality. It allows for <span className="text-white font-medium">conditional funding</span>—pledging capital that only moves if a specific real-world event happens first.

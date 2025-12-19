@@ -1,7 +1,7 @@
 
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 
 interface HandDrawnButtonProps {
@@ -10,13 +10,13 @@ interface HandDrawnButtonProps {
 }
 
 function HandDrawnButton({ text, href = "/create" }: HandDrawnButtonProps) {
-    const draw = {
+    const draw: Variants = {
         hidden: { pathLength: 0, opacity: 0 },
         visible: {
             pathLength: 1,
             opacity: 1,
             transition: {
-                pathLength: { delay: 0.2, type: "tween", duration: 1.5, bounce: 0 },
+                pathLength: { delay: 0.2, duration: 1.5 },
                 opacity: { delay: 0.2, duration: 0.01 },
             },
         },

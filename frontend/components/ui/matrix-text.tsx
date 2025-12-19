@@ -1,65 +1,133 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
-interface MatrixTextProps {
-  text: string;
-  className?: string;
-  typingSpeed?: number;
-  cursorBlinkSpeed?: number;
+interface LetterState {
+    char: string;
+    isMatrix: boolean;
+    isSpace: boolean;
 }
 
-export const MatrixText: React.FC<MatrixTextProps> = ({
-  text,
-  className = '',
-  typingSpeed = 50,
-  cursorBlinkSpeed = 500,
-}) => {
-  const [displayedText, setDisplayedText] = useState('');
-  const [showCursor, setShowCursor] = useState(true);
-  const cursorTimerRef = useRef<NodeJS.Timeout | null>(null);
+interface MatrixTextProps {
+    text?: string;
+    className?: string;
+    initialDelay?: number;
+    letterAnimationDuration?: number;
+    letterInterval?: number;
+}
 
-  useEffect(() => {
-    // Clear any existing cursor timer
-    if (cursorTimerRef.current) {
-      clearInterval(cursorTimerRef.current);
-    }
+export const MatrixText = ({
+    text = "HelloWorld!",
+    className,
+    initialDelay = 200,
+    letterAnimationDuration = 500,
+    letterInterval = 100,
+}: MatrixTextProps) => {
+    const [letters, setLetters] = useState<LetterState[]>(() =>
+        text.split("").map((char) => ({
+            char,
+            isMatrix: false,
+            isSpace: char === " ",
+        }))
+    );
 
-    // Start typing animation
-    let index = 0;
-    const typingTimer = setInterval(() => {
-      if (index < text.length) {
-        setDisplayedText(text.slice(0, index + 1));
-        index++;
-      } else {
-        clearInterval(typingTimer);
-      }
-    }, typingSpeed);
+    const getRandomChar = useCallback(
+        () => (Math.random() > 0.5 ? "1" : "0"),
+        []
+    );
 
-    // Start cursor blinking
-    cursorTimerRef.current = setInterval(() => {
-      setShowCursor(prev => !prev);
-    }, cursorBlinkSpeed);
+    useEffect(() => {
+        const timeouts: NodeJS.Timeout[] = [];
 
-    return () => {
-      clearInterval(typingTimer);
-      if (cursorTimerRef.current) {
-        clearInterval(cursorTimerRef.current);
-      }
-    };
-  }, [text, typingSpeed, cursorBlinkSpeed]);
+        const cleanup = () => {
+            timeouts.forEach(clearTimeout);
+        };
 
-  return (
-    <span className={className}>
-      {displayedText}
-      {displayedText.length < text.length && showCursor && (
-        <motion.span
-          animate={{ opacity: [1, 0, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity }}
-          className="inline-block w-0.5 h-[1em] bg-lime-400 ml-0.5"
-        />
-      )}
-    </span>
-  );
+        const startAnimationCycle = () => {
+            let currentIndex = 0;
+
+            const animateLetter = (index: number) => {
+                requestAnimationFrame(() => {
+                    setLetters((prev) => {
+                        const newLetters = [...prev];
+                        if (newLetters[index] && !newLetters[index].isSpace) {
+                            newLetters[index] = { ...newLetters[index], char: getRandomChar(), isMatrix: true };
+                        }
+                        return newLetters;
+                    });
+                });
+
+                const unscrambleTimeout = setTimeout(() => {
+                    setLetters((prev) => {
+                        const newLetters = [...prev];
+                        if (newLetters[index]) {
+                            newLetters[index] = { ...newLetters[index], char: text[index], isMatrix: false };
+                        }
+                        return newLetters;
+                    });
+                }, letterAnimationDuration);
+                timeouts.push(unscrambleTimeout);
+            };
+
+            const animate = () => {
+                if (currentIndex >= text.length) {
+                    const loopTimeout = setTimeout(startAnimationCycle, 3000);
+                    timeouts.push(loopTimeout);
+                    return;
+                }
+
+                animateLetter(currentIndex);
+                currentIndex++;
+
+                const nextLetterTimeout = setTimeout(animate, letterInterval);
+                timeouts.push(nextLetterTimeout);
+            };
+
+            animate();
+        };
+
+        const initialStartTimeout = setTimeout(startAnimationCycle, initialDelay);
+        timeouts.push(initialStartTimeout);
+
+        return cleanup;
+    }, [text, initialDelay, letterAnimationDuration, letterInterval, getRandomChar]);
+
+    const motionVariants = useMemo(
+        () => ({
+            matrix: {
+                color: "#a3e635",
+                textShadow: "0 2px 4px rgba(163, 230, 53, 0.5)",
+            },
+        }),
+        []
+    );
+
+    return (
+        <div
+            className={cn("flex flex-wrap justify-center", className)}
+            aria-label="Matrix text animation"
+        >
+            {letters.map((letter, index) => (
+                <motion.div
+                    key={`${index}-${letter.char}`}
+                    className="font-mono w-[1ch] text-center overflow-hidden"
+                    initial="initial"
+                    animate={letter.isMatrix ? "matrix" : "normal"}
+                    variants={motionVariants}
+                    transition={{
+                        duration: 0.1,
+                        ease: "easeInOut",
+                    }}
+                    style={{
+                        display: "inline-block",
+                        fontVariantNumeric: "tabular-nums",
+                    }}
+                >
+                    {letter.isSpace ? "\u00A0" : letter.char}
+                </motion.div>
+            ))}
+        </div>
+    );
 };

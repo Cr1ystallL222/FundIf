@@ -9,27 +9,14 @@ import React, {
   ReactNode,
 } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-import {
-  motion,
-  AnimatePresence,
+import { 
+  motion, 
+  AnimatePresence, 
   useInView,
   Variants
 } from 'framer-motion';
-
-// Dynamic imports to prevent SSR issues
-const RainingLetters = dynamic(() => import('@/components/ui/modern-animated-hero-section'), {
-  ssr: false,
-  loading: () => null
-});
-const MatrixText = dynamic(() => import('@/components/ui/matrix-text').then(mod => ({ default: mod.MatrixText })), {
-  ssr: false,
-  loading: () => null
-});
-const TypingAnimation = dynamic(() => import('@/components/ui/typing-animation').then(mod => ({ default: mod.TypingAnimation })), {
-  ssr: false,
-  loading: () => <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight opacity-0">Loading...</h2>
-});
+import { FallingPattern } from '@/components/ui/falling-pattern';
+import { MatrixText } from '@/components/ui/matrix-text';
 import { 
     CircleDollarSign, 
     Lock, 
@@ -294,9 +281,76 @@ const ValueCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc
 export default function Home() {
   return (
     <TooltipProvider>
-      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden" suppressHydrationWarning={true}>
+      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
         
-        <RainingLetters />
+        {/* Hero Section */}
+        <div className="relative w-full h-screen bg-black overflow-hidden">
+          <FallingPattern
+            color="#a3e635"
+            backgroundColor="#000000"
+            duration={150}
+            blurIntensity="1em"
+            density={1}
+            className="absolute inset-0"
+          />
+
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 text-center w-full px-4">
+            <div className="max-w-4xl mx-auto relative z-10">
+              {/* Headline */}
+              <motion.h1
+                className="text-6xl md:text-8xl font-bold text-white leading-[0.9] tracking-tighter mb-10"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              >
+                Fund the Future, <br />
+                <span className="text-lime-400">
+                  On <span className="underline decoration-4 decoration-lime-400 underline-offset-[12px]">Your</span> Terms.
+                </span>
+              </motion.h1>
+
+              {/* Subhead */}
+              <motion.p
+                className="text-xl text-zinc-400 max-w-xl leading-relaxed mb-12 mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.7 }}
+              >
+                A crowdfunding protocol tied to reality. Funds held in escrow and unlock <span className="text-white font-semibold">only</span> if a specific prediction market event resolves to <span className="text-lime-400 font-semibold">YES</span>.
+              </motion.p>
+
+              {/* Buttons */}
+              <motion.div
+                className="flex flex-col sm:flex-row items-center justify-center gap-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.7 }}
+              >
+                <Link href="/create" className="w-full sm:w-auto">
+                  <button className="w-full sm:w-auto px-10 py-5 bg-white text-black rounded-sm font-medium hover:bg-gray-200 transition-all flex items-center justify-center gap-3 text-base">
+                    Create Campaign
+                    <CornerDownRight className="opacity-70" />
+                  </button>
+                </Link>
+
+                <a
+                  href="https://github.com/loganstaples/FundIf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto"
+                >
+                  <button className="w-full sm:w-auto px-10 py-5 bg-transparent border border-zinc-700 text-zinc-300 font-medium rounded-sm hover:bg-zinc-800 hover:border-zinc-600 transition-all flex items-center justify-center gap-3 text-base">
+                    Read Protocol Docs
+                    <ArrowRight className="opacity-50" />
+                  </button>
+                </a>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Gradient Mask */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent z-30" />
+        </div>
 
         {/* SECTION: HOW IT WORKS (LOGIC) */}
         <section className="py-32 px-6 border-b border-white/5 bg-[#050505]">
@@ -326,11 +380,10 @@ export default function Home() {
         <section className="py-32 px-6 border-b border-white/5">
           <div className="max-w-6xl mx-auto">
             <Reveal className="mb-16 max-w-3xl">
-              <TypingAnimation
-                text="Don't trust promises. Trust code."
-                duration={80}
-                className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight"
-              />
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+                Don't trust promises. <br />
+                Trust <span className="text-lime-400">code</span>.
+              </h2>
               <p className="text-xl text-zinc-400 leading-relaxed">
                 Traditional crowdfunding asks you to believe the creator will follow through. 
                 FundIf binds funds to reality. It allows for <span className="text-white font-medium">conditional funding</span>—pledging capital that only moves if a specific real-world event happens first.

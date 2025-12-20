@@ -189,9 +189,9 @@ export const Vortex = (props: VortexProps) => {
     canvas: HTMLCanvasElement,
     ctx?: CanvasRenderingContext2D
   ) => {
-    const container = containerRef.current as HTMLElement;
+    const container = containerRef.current;
     if (container) {
-      const rect = container.getBoundingClientRect();
+      const rect = (container as HTMLElement).getBoundingClientRect();
       canvas.width = rect.width;
       canvas.height = rect.height;
     } else {

@@ -53,6 +53,8 @@ export function Footer() {
         { href: '/', label: 'Home', desc: 'Landing Page' },
         { href: '/explore', label: 'Explore', desc: 'Prediction Markets' },
         { href: '/create', label: 'Create', desc: 'New Campaign' },
+        { href: '#', label: 'Docs', desc: 'Documentation' },
+        { href: '#', label: 'Whitepaper', desc: 'Technical Paper' },
     ]
 
     const socialLinks = [
@@ -150,7 +152,7 @@ export function Footer() {
                         className="text-center"
                     >
                         <p className="text-zinc-500 text-xs">
-                            © 2025 FundIf. Built with ❤️ on Base Sepolia.
+                            © 2025 FundIf. All rights reserved.
                         </p>
                     </motion.div>
                 </div>

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { FloatingPaths } from '@/components/ui/background-paths'
+import { BeamsBackground } from '@/components/ui/beams-background'
 
 // ============================================================================
 // ICON COMPONENTS
@@ -148,15 +148,7 @@ const Note = ({ type = "info", children }: { type?: "info" | "warning" | "succes
 
 export default function FundIfWhitepaper() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-300 font-sans">
-      {/* Background */}
-      <div className="fixed inset-0 overflow-hidden">
-        <div className="absolute inset-0">
-          <FloatingPaths position={1} />
-          <FloatingPaths position={-1} />
-        </div>
-      </div>
-
+    <BeamsBackground className="text-zinc-300 font-sans">
       {/* Content */}
       <div className="relative z-10">
         {/* Hero Section */}
@@ -795,6 +787,6 @@ Project Success = f(objective_outcome_verification)`}</pre>
           </div>
         </main>
       </div>
-    </div>
+    </BeamsBackground>
   )
 }

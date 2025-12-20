@@ -188,13 +188,66 @@ const LogicVisualizer = () => {
                         animate={isInView ? { opacity: 1, scale: 1 } : {}}
                         transition={{ delay: 0.4, duration: 0.5 }}
                         className="flex flex-col items-center gap-4 p-6 relative group w-48 text-center bg-black/50 border border-amber-500/40 rounded-2xl"
+                        style={{
+                            boxShadow: `
+                                0 0 40px rgba(245, 158, 11, 0.4),
+                                0 0 80px rgba(245, 158, 11, 0.3),
+                                0 0 120px rgba(245, 158, 11, 0.2),
+                                inset 0 0 20px rgba(245, 158, 11, 0.1)
+                            `
+                        }}
                         {...useTooltip('node-contract', 'Immutable Logic')}
                     >
-                        <div className="w-32 h-32 bg-zinc-900 border border-amber-500/20 rounded-2xl flex items-center justify-center relative">
-                            <Lock className="w-12 h-12 text-amber-500" />
+                        {/* Glow aura layers with animation */}
+                        <motion.div 
+                            className="absolute inset-0 rounded-2xl bg-amber-500/30 blur-2xl -z-10"
+                            animate={{
+                                opacity: [0.3, 0.6, 0.3],
+                                scale: [1, 1.1, 1],
+                            }}
+                            transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                        />
+                        <motion.div 
+                            className="absolute inset-0 rounded-2xl bg-amber-500/20 blur-xl -z-10"
+                            animate={{
+                                opacity: [0.2, 0.4, 0.2],
+                            }}
+                            transition={{
+                                duration: 2.5,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                        />
+                        <motion.div 
+                            className="absolute -inset-4 rounded-2xl bg-amber-500/15 blur-3xl -z-10"
+                            animate={{
+                                opacity: [0.1, 0.3, 0.1],
+                                scale: [1, 1.15, 1],
+                            }}
+                            transition={{
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                        />
+                        
+                        <div className="w-32 h-32 bg-zinc-900 border border-amber-500/20 rounded-2xl flex items-center justify-center relative"
+                            style={{
+                                boxShadow: `
+                                    0 0 30px rgba(245, 158, 11, 0.5),
+                                    0 0 60px rgba(245, 158, 11, 0.3),
+                                    inset 0 0 15px rgba(245, 158, 11, 0.1)
+                                `
+                            }}
+                        >
+                            <Lock className="w-12 h-12 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
                         </div>
                         <div className="text-center">
-                             <MatrixText text="SMART CONTRACT" className="text-sm font-bold text-amber-500 uppercase tracking-wider mb-1" />
+                             <MatrixText text="SMART CONTRACT" className="text-sm font-bold text-amber-500 uppercase tracking-wider mb-1 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
                             <div className="text-xs text-zinc-500">Awaits Resolution</div>
                         </div>
                     </motion.div>

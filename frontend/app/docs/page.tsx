@@ -4,28 +4,28 @@ import React, { useState, useEffect } from 'react';
 
 // --- Inline SVG Icons to prevent external dependency errors ---
 
-const Book = ({ size = 18, className = "" }) => (
+const Book = ({ size = 18, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
   </svg>
 );
 
-const Code = ({ size = 18, className = "" }) => (
+const Code = ({ size = 18, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <polyline points="16 18 22 12 16 6" />
     <polyline points="8 6 2 12 8 18" />
   </svg>
 );
 
-const Terminal = ({ size = 18, className = "" }) => (
+const Terminal = ({ size = 18, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <polyline points="4 17 10 11 4 5" />
     <line x1="12" y1="19" x2="20" y2="19" />
   </svg>
 );
 
-const Layers = ({ size = 18, className = "" }) => (
+const Layers = ({ size = 18, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <polygon points="12 2 2 7 12 12 22 7 12 2" />
     <polyline points="2 17 12 22 22 17" />
@@ -33,13 +33,13 @@ const Layers = ({ size = 18, className = "" }) => (
   </svg>
 );
 
-const Shield = ({ size = 18, className = "" }) => (
+const Shield = ({ size = 18, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
 
-const Cpu = ({ size = 18, className = "" }) => (
+const Cpu = ({ size = 18, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
     <rect x="9" y="9" width="6" height="6" />
@@ -54,7 +54,7 @@ const Cpu = ({ size = 18, className = "" }) => (
   </svg>
 );
 
-const Menu = ({ size = 24, className = "" }) => (
+const Menu = ({ size = 24, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <line x1="3" y1="12" x2="21" y2="12" />
     <line x1="3" y1="6" x2="21" y2="6" />
@@ -62,20 +62,20 @@ const Menu = ({ size = 24, className = "" }) => (
   </svg>
 );
 
-const CloseIcon = ({ size = 24, className = "" }) => (
+const CloseIcon = ({ size = 24, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
-const ChevronRight = ({ size = 14, className = "" }) => (
+const ChevronRight = ({ size = 14, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <polyline points="9 18 15 12 9 6" />
   </svg>
 );
 
-const ExternalLink = ({ size = 12, className = "" }) => (
+const ExternalLink = ({ size = 12, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
     <polyline points="15 3 21 3 21 9" />
@@ -83,33 +83,33 @@ const ExternalLink = ({ size = 12, className = "" }) => (
   </svg>
 );
 
-const Copy = ({ size = 14, className = "" }) => (
+const Copy = ({ size = 14, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
   </svg>
 );
 
-const Check = ({ size = 14, className = "" }) => (
+const Check = ({ size = 14, className = "" }: { size?: number; className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 
 // Custom Social Icons
-const XIcon = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className="shrink-0">
+const XIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className={`shrink-0 ${className || ""}`}>
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L7.69 2H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
   </svg>
 );
 
-const TelegramIcon = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" className="shrink-0">
+const TelegramIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" className={`shrink-0 ${className || ""}`}>
     <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12.017 12.017 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
   </svg>
 );
 
-const DocSection = ({ title, children, id }) => (
+const DocSection = ({ title, children, id }: { title: string; children: React.ReactNode; id: string }) => (
   <div id={id} className="mb-16 scroll-mt-24">
     <h2 className="text-3xl font-bold text-white mb-6 border-b border-zinc-800 pb-2">{title}</h2>
     <div className="text-zinc-400 leading-relaxed space-y-4">
@@ -118,14 +118,14 @@ const DocSection = ({ title, children, id }) => (
   </div>
 );
 
-const SubHeading = ({ children }) => (
+const SubHeading = ({ children }: { children: React.ReactNode }) => (
   <h3 className="text-xl font-semibold text-zinc-200 mt-8 mb-4 flex items-center">
     <span className="w-1.5 h-6 bg-green-500 rounded-full mr-3 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></span>
     {children}
   </h3>
 );
 
-const CodeBlock = ({ code, language = "bash" }) => {
+const CodeBlock = ({ code, language = "bash" }: { code: string; language?: string }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = () => {
@@ -154,7 +154,7 @@ const CodeBlock = ({ code, language = "bash" }) => {
   );
 };
 
-const Note = ({ type = "info", children }) => {
+const Note = ({ type = "info", children }: { type?: "info" | "warning" | "success"; children: React.ReactNode }) => {
   const styles = {
     info: "bg-blue-950/30 border-blue-500/50 text-blue-200",
     warning: "bg-amber-950/30 border-amber-500/50 text-amber-200",

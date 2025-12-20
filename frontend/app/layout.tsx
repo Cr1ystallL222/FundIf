@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   title: 'FundIf - Prediction-Gated Crowdfunding',
   description: 'A prediction-gated crowdfunding platform built on Base Sepolia. Create and fund campaigns with prediction markets.',
   keywords: ['crowdfunding', 'prediction markets', 'web3', 'Base', 'blockchain'],
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

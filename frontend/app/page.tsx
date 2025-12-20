@@ -17,6 +17,7 @@ import {
 } from 'framer-motion';
 import { FallingPattern } from '@/components/ui/falling-pattern';
 import { MatrixText } from '@/components/ui/matrix-text';
+import { TypingAnimationStyled } from '@/components/ui/typing-animation-styled';
 import { 
     CircleDollarSign, 
     Lock, 
@@ -393,8 +394,16 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <Reveal className="mb-16 max-w-3xl">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
-                Don't trust promises. <br />
-                Trust <span className="text-lime-400">code</span>.
+                <TypingAnimationStyled
+                  parts={[
+                    { text: "Don't trust promises. ", className: "text-white" },
+                    { text: "Trust ", className: "text-white" },
+                    { text: "code", className: "text-lime-400" },
+                    { text: ".", className: "text-white" }
+                  ]}
+                  duration={60}
+                  className="inline-block"
+                />
               </h2>
               <p className="text-xl text-zinc-400 leading-relaxed">
                 Traditional crowdfunding asks you to believe the creator will follow through. 

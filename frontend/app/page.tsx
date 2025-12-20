@@ -482,23 +482,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* CTA FOOTER */}
-        <section className="py-32 px-6 border-t border-white/5 text-center">
-          <Reveal>
-            <div className="max-w-2xl mx-auto">
-              <h2 className="text-5xl font-bold text-white mb-8 tracking-tight">Ready to build?</h2>
-              <p className="text-zinc-400 mb-10 text-lg">
-                Launch a conditional campaign in minutes.
-              </p>
-              <Link href="/create">
-                <button className="px-12 py-5 bg-lime-400 text-black font-bold text-lg rounded-sm hover:bg-lime-300 transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_-10px_rgba(163,230,53,0.4)]">
-                  Create Campaign
-                </button>
-              </Link>
-            </div>
-          </Reveal>
-        </section>
-
         {/* Tailwind custom utilities for animation */}
         <style>{`
           @keyframes blob {

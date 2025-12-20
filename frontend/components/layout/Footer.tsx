@@ -3,7 +3,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ExternalLink, Github, Twitter, MessageCircle } from 'lucide-react'
+import { ExternalLink, Twitter, MessageCircle } from 'lucide-react'
 import { FloatingPaths } from '@/components/ui/background-paths'
 
 
@@ -18,9 +18,8 @@ export function Footer() {
     ]
 
     const socialLinks = [
-        { href: 'https://github.com', label: 'GitHub', icon: Github },
-        { href: 'https://twitter.com', label: 'Twitter', icon: Twitter },
-        { href: 'https://discord.com', label: 'Discord', icon: MessageCircle },
+        { href: 'https://t.me', label: 'Telegram', icon: MessageCircle },
+        { href: 'https://x.com', label: 'X', icon: Twitter },
     ]
 
     return (

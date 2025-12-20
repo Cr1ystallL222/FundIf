@@ -37,7 +37,7 @@ export function Web3Provider({ children, initialState }: Web3ProviderProps) {
           config={{
             appearance: {
               name: 'FundIf',
-              logo: undefined,
+              logo: '/images/logo.png',
               mode: 'light',
               theme: 'base',
             },

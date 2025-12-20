@@ -10,6 +10,7 @@ interface VortexProps {
   particleCount?: number;
   rangeY?: number;
   baseHue?: number;
+  rangeHue?: number;
   baseSpeed?: number;
   rangeSpeed?: number;
   baseRadius?: number;
@@ -31,7 +32,7 @@ export const Vortex = (props: VortexProps) => {
   const baseRadius = props.baseRadius || 1;
   const rangeRadius = props.rangeRadius || 2;
   const baseHue = props.baseHue || 120; // Green color (was 220 for blue)
-  const rangeHue = 60; // Range for green variations
+  const rangeHue = props.rangeHue || 60; // Range for green variations
   const noiseSteps = 3;
   const xOff = 0.00125;
   const yOff = 0.00125;

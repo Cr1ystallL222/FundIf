@@ -661,6 +661,24 @@
   90% { transform: translate(-10%, 10%); }
 }
 
+/* Meteor Animation */
+@keyframes meteor-effect {
+  0% {
+    opacity: 1;
+    transform: rotate(215deg) translateX(0px) translateY(0px);
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(215deg) translateX(-1000px) translateY(1000px);
+  }
+}
+
 /* Blink Animation */
 @keyframes blink {
   0%, 100% { opacity: 1; }
@@ -1946,6 +1964,10 @@
 
   .animate-blink {
     animation: blink 1s step-end infinite;
+  }
+
+  .animate-meteor-effect {
+    animation: meteor-effect linear infinite;
   }
 
   /* Animation Delays */

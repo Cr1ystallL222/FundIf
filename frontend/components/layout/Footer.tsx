@@ -42,7 +42,7 @@ const TelegramIcon = ({ className }: { className?: string }) => (
     />
   </svg>
 )
-import { FloatingPaths } from '@/components/ui/background-paths'
+import { Vortex } from '@/components/ui/vortex'
 
 
 // Footer Component
@@ -64,15 +64,20 @@ export function Footer() {
 
     return (
         <footer className="relative mt-auto">
-            {/* Background Paths */}
-            <div className="relative h-80 overflow-hidden bg-black">
-                <div className="absolute inset-0">
-                    <FloatingPaths position={1} />
-                    <FloatingPaths position={-1} />
-                </div>
-
-                {/* Content Overlay */}
-                <div className="relative z-10 flex flex-col items-center justify-center h-full px-6">
+            {/* Vortex Background */}
+            <div className="relative h-80 overflow-hidden">
+                <Vortex
+                    className="h-full"
+                    containerClassName="h-full"
+                    particleCount={700}
+                    baseHue={120}
+                    rangeHue={60}
+                    baseSpeed={0.0}
+                    rangeSpeed={1.5}
+                    backgroundColor="#000000"
+                >
+                    {/* Content Overlay */}
+                    <div className="relative z-10 flex flex-col items-center justify-center h-full px-6">
                     {/* Brand */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -155,7 +160,8 @@ export function Footer() {
                             © 2025 FundIf. All rights reserved.
                         </p>
                     </motion.div>
-                </div>
+                    </div>
+                </Vortex>
             </div>
         </footer>
     )

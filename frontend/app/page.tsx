@@ -123,8 +123,23 @@ const LogicVisualizer = () => {
 
     return (
         <div ref={containerRef} className="relative w-full max-w-7xl mx-auto hidden md:block">
-            <div className="relative bg-neutral-950 border border-white/10 rounded-xl p-16 overflow-hidden">
-                <div className="absolute inset-0 bg-grid-white/[0.02] bg-center [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+            <div className="relative bg-black border border-white/10 rounded-xl p-16 overflow-hidden">
+                {/* Grid pattern background */}
+                <div className="absolute inset-0">
+                    <div 
+                        className="w-full h-full"
+                        style={{
+                            backgroundImage: `
+                                linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px)
+                            `,
+                            backgroundSize: '50px 50px',
+                            backgroundPosition: '0 0',
+                        }}
+                    />
+                </div>
+                {/* Subtle overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20 pointer-events-none" />
                 
                 <div className="absolute top-6 left-6 text-xs font-mono text-zinc-500 uppercase tracking-widest">// EXECUTION_FLOW_V1</div>
                 <motion.div 

@@ -262,15 +262,27 @@ const ProcessCard = ({ number, title, desc, icon: Icon }: { number: string, titl
 // 7. COMPONENT: INTERACTIVE VALUE PROPS
 // ============================================================================
 
-const ValueCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc: string }) => (
-  <Reveal>
-    <div className="group p-8 bg-zinc-900/30 border border-zinc-800/60 rounded-lg hover:border-lime-500/50 hover:bg-zinc-900/60 transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(132,204,22,0.2)] cursor-default h-full flex flex-col">
+const ValueCard = ({ icon: Icon, title, desc, delay = 0 }: { icon: any, title: string, desc: string, delay?: number }) => (
+  <Reveal delay={delay}>
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      whileInView={{ scale: 1, opacity: 1 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{
+        duration: 0.6,
+        delay,
+        ease: [0.22, 1, 0.36, 1],
+        scale: { type: "spring", damping: 20, stiffness: 100 }
+      }}
+      whileHover={{ scale: 1.02 }}
+      className="group p-8 bg-zinc-900/30 border border-zinc-800/60 rounded-lg hover:border-lime-500/50 hover:bg-zinc-900/60 transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(132,204,22,0.2)] cursor-default h-full flex flex-col"
+    >
       <div className="mb-6 w-12 h-12 rounded bg-zinc-800/50 flex items-center justify-center group-hover:bg-lime-500/20 transition-colors">
         <Icon className="text-zinc-400 group-hover:text-lime-400 transition-colors w-6 h-6" />
       </div>
       <h4 className="text-xl font-bold text-white mb-3">{title}</h4>
       <p className="text-sm text-zinc-400 leading-relaxed">{desc}</p>
-    </div>
+    </motion.div>
   </Reveal>
 );
 
@@ -391,20 +403,23 @@ export default function Home() {
             </Reveal>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <ValueCard 
+              <ValueCard
                 icon={GitBranch}
                 title="Conditional Triggers"
                 desc="Fund a cause ONLY if a specific event happens. Like donating to a legal defense fund only if charges are filed. This isn't about verifying milestones; it's about programmatic contingency."
+                delay={0.1}
               />
-              <ValueCard 
+              <ValueCard
                 icon={IdCard}
                 title="Identity & Transparency"
                 desc="Powered by Basenames. You see exactly who you are funding. The contract is verified and open-source, ensuring that once the campaign starts, the creator has zero control over the funds."
+                delay={0.2}
               />
-              <ValueCard 
+              <ValueCard
                 icon={Shield}
                 title="Guaranteed Refunds"
                 desc="There is no middleman to beg for a refund. If the Polymarket oracle resolves the event to NO, the smart contract automatically unlocks 100% of funds for backers to claim."
+                delay={0.3}
               />
             </div>
           </div>

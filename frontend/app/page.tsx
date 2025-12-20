@@ -18,7 +18,6 @@ import {
 import { FallingPattern } from '@/components/ui/falling-pattern';
 import { MatrixText } from '@/components/ui/matrix-text';
 import { TypingAnimationStyled } from '@/components/ui/typing-animation-styled';
-import { Meteors } from '@/components/ui/meteors';
 import { 
     CircleDollarSign, 
     Lock, 
@@ -277,16 +276,13 @@ const ValueCard = ({ icon: Icon, title, desc, delay = 0 }: { icon: any, title: s
         scale: { type: "spring", damping: 20, stiffness: 100 }
       }}
       whileHover={{ scale: 1.02 }}
-      className="group p-8 bg-zinc-900/30 border border-zinc-800/60 rounded-lg hover:border-lime-500/50 hover:bg-zinc-900/60 transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(132,204,22,0.2)] cursor-default h-full flex flex-col relative overflow-hidden"
+      className="group p-8 bg-zinc-900/30 border border-zinc-800/60 rounded-lg hover:border-lime-500/50 hover:bg-zinc-900/60 transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(132,204,22,0.2)] cursor-default h-full flex flex-col"
     >
-      <Meteors number={8} className="absolute inset-0" />
-      <div className="relative z-10">
-        <div className="mb-6 w-12 h-12 rounded bg-zinc-800/50 flex items-center justify-center group-hover:bg-lime-500/20 transition-colors">
-          <Icon className="text-zinc-400 group-hover:text-lime-400 transition-colors w-6 h-6" />
-        </div>
-        <h4 className="text-xl font-bold text-white mb-3">{title}</h4>
-        <p className="text-sm text-zinc-400 leading-relaxed">{desc}</p>
+      <div className="mb-6 w-12 h-12 rounded bg-zinc-800/50 flex items-center justify-center group-hover:bg-lime-500/20 transition-colors">
+        <Icon className="text-zinc-400 group-hover:text-lime-400 transition-colors w-6 h-6" />
       </div>
+      <h4 className="text-xl font-bold text-white mb-3">{title}</h4>
+      <p className="text-sm text-zinc-400 leading-relaxed">{desc}</p>
     </motion.div>
   </Reveal>
 );

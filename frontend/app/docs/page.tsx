@@ -222,10 +222,6 @@ export default function FundIfDocs() {
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
           <div className="p-6 h-full flex flex-col">
-            <div className="hidden lg:flex items-center gap-2 font-bold text-2xl text-green-500 mb-10 font-mono">
-              <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]">F</div>
-              FundIf <span className="text-zinc-600 font-normal text-xs self-end mb-1 font-sans">v1.0.0</span>
-            </div>
 
             <nav className="space-y-1 flex-1">
               {navigation.map((item) => (

@@ -190,7 +190,7 @@ export default function FundIfDocs() {
   ];
 
   // Close sidebar on section click (mobile)
-  const handleNavClick = (id) => {
+  const handleNavClick = (id: string) => {
     setActiveSection(id);
     setIsSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });

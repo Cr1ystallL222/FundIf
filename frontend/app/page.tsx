@@ -17,8 +17,6 @@ import {
 } from 'framer-motion';
 import { FallingPattern } from '@/components/ui/falling-pattern';
 import { MatrixText } from '@/components/ui/matrix-text';
-import { TypingAnimationStyled } from '@/components/ui/typing-animation-styled';
-import { Meteors } from '@/components/ui/meteors';
 import { 
     CircleDollarSign, 
     Lock, 
@@ -261,33 +259,41 @@ const ProcessCard = ({ number, title, desc, icon: Icon }: { number: string, titl
 );
 
 // ============================================================================
-// 7. COMPONENT: INTERACTIVE VALUE PROPS
+// 7. COMPONENT: INTERACTIVE VALUE PROPS (Skew Cards)
 // ============================================================================
 
-const ValueCard = ({ icon: Icon, title, desc, delay = 0 }: { icon: any, title: string, desc: string, delay?: number }) => (
-  <Reveal delay={delay}>
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      whileInView={{ scale: 1, opacity: 1 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{
-        duration: 0.6,
-        delay,
-        ease: [0.22, 1, 0.36, 1],
-        scale: { type: "spring", damping: 20, stiffness: 100 }
-      }}
-      whileHover={{ scale: 1.02 }}
-      className="group p-8 bg-zinc-900/30 border border-zinc-800/60 rounded-lg hover:border-lime-500/50 hover:bg-zinc-900/60 transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(132,204,22,0.2)] cursor-default h-full flex flex-col relative overflow-hidden"
-    >
-      <Meteors number={20} />
-      <div className="relative z-10">
-        <div className="mb-6 w-12 h-12 rounded bg-zinc-800/50 flex items-center justify-center group-hover:bg-lime-500/20 transition-colors">
-          <Icon className="text-zinc-400 group-hover:text-lime-400 transition-colors w-6 h-6" />
+const ValueCard = ({ icon: Icon, title, desc, gradientFrom, gradientTo }: { icon: any, title: string, desc: string, gradientFrom: string, gradientTo: string }) => (
+  <Reveal>
+    <div className="group relative w-full md:w-[320px] h-[400px] transition-all duration-500">
+      {/* Skewed gradient panels */}
+      <span
+        className="absolute top-0 left-[50px] w-1/2 h-full rounded-lg transform skew-x-[15deg] transition-all duration-500 group-hover:skew-x-0 group-hover:left-[20px] group-hover:w-[calc(100%-90px)]"
+        style={{
+          background: `linear-gradient(315deg, ${gradientFrom}, ${gradientTo})`,
+        }}
+      />
+      <span
+        className="absolute top-0 left-[50px] w-1/2 h-full rounded-lg transform skew-x-[15deg] blur-[30px] transition-all duration-500 group-hover:skew-x-0 group-hover:left-[20px] group-hover:w-[calc(100%-90px)]"
+        style={{
+          background: `linear-gradient(315deg, ${gradientFrom}, ${gradientTo})`,
+        }}
+      />
+
+      {/* Animated blurs */}
+      <span className="pointer-events-none absolute inset-0 z-10">
+        <span className="absolute top-0 left-0 w-0 h-0 rounded-lg opacity-0 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] shadow-[0_5px_15px_rgba(0,0,0,0.08)] transition-all duration-100 animate-blob group-hover:top-[-50px] group-hover:left-[50px] group-hover:w-[100px] group-hover:h-[100px] group-hover:opacity-100" />
+        <span className="absolute bottom-0 right-0 w-0 h-0 rounded-lg opacity-0 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] shadow-[0_5px_15px_rgba(0,0,0,0.08)] transition-all duration-500 animate-blob animation-delay-1000 group-hover:bottom-[-50px] group-hover:right-[50px] group-hover:w-[100px] group-hover:h-[100px] group-hover:opacity-100" />
+      </span>
+
+      {/* Content */}
+      <div className="relative z-20 left-0 p-[20px_40px] bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] shadow-lg rounded-lg text-white transition-all duration-500 group-hover:left-[-25px] group-hover:p-[60px_40px] h-full flex flex-col">
+        <div className="mb-6 w-12 h-12 rounded bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+          <Icon className="text-white transition-colors w-6 h-6" />
         </div>
-        <h4 className="text-xl font-bold text-white mb-3">{title}</h4>
-        <p className="text-sm text-zinc-400 leading-relaxed">{desc}</p>
+        <h4 className="text-2xl font-bold mb-3">{title}</h4>
+        <p className="text-base leading-relaxed mb-4 flex-1">{desc}</p>
       </div>
-    </motion.div>
+    </div>
   </Reveal>
 );
 
@@ -398,16 +404,8 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <Reveal className="mb-16 max-w-3xl">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
-                <TypingAnimationStyled
-                  parts={[
-                    { text: "Don't trust promises. ", className: "text-white" },
-                    { text: "Trust ", className: "text-white" },
-                    { text: "code", className: "text-lime-400" },
-                    { text: ".", className: "text-white" }
-                  ]}
-                  duration={60}
-                  className="inline-block"
-                />
+                Don't trust promises. <br />
+                Trust <span className="text-lime-400">code</span>.
               </h2>
               <p className="text-xl text-zinc-400 leading-relaxed">
                 Traditional crowdfunding asks you to believe the creator will follow through. 
@@ -415,25 +413,34 @@ export default function Home() {
               </p>
             </Reveal>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <ValueCard
-                icon={GitBranch}
-                title="Conditional Triggers"
-                desc="Fund a cause ONLY if a specific event happens. Like donating to a legal defense fund only if charges are filed. This isn't about verifying milestones; it's about programmatic contingency."
-                delay={0.1}
-              />
-              <ValueCard
-                icon={IdCard}
-                title="Identity & Transparency"
-                desc="Powered by Basenames. You see exactly who you are funding. The contract is verified and open-source, ensuring that once the campaign starts, the creator has zero control over the funds."
-                delay={0.2}
-              />
-              <ValueCard
-                icon={Shield}
-                title="Guaranteed Refunds"
-                desc="There is no middleman to beg for a refund. If the Polymarket oracle resolves the event to NO, the smart contract automatically unlocks 100% of funds for backers to claim."
-                delay={0.3}
-              />
+            <div className="flex justify-center items-start flex-wrap py-10">
+              <div className="m-4 md:m-[40px_30px]">
+                <ValueCard 
+                  icon={GitBranch}
+                  title="Conditional Triggers"
+                  desc="Fund a cause ONLY if a specific event happens. Like donating to a legal defense fund only if charges are filed. This isn't about verifying milestones; it's about programmatic contingency."
+                  gradientFrom="#3b82f6"
+                  gradientTo="#a3e635"
+                />
+              </div>
+              <div className="m-4 md:m-[40px_30px]">
+                <ValueCard 
+                  icon={IdCard}
+                  title="Identity & Transparency"
+                  desc="Powered by Basenames. You see exactly who you are funding. The contract is verified and open-source, ensuring that once the campaign starts, the creator has zero control over the funds."
+                  gradientFrom="#8b5cf6"
+                  gradientTo="#a3e635"
+                />
+              </div>
+              <div className="m-4 md:m-[40px_30px]">
+                <ValueCard 
+                  icon={Shield}
+                  title="Guaranteed Refunds"
+                  desc="There is no middleman to beg for a refund. If the Polymarket oracle resolves the event to NO, the smart contract automatically unlocks 100% of funds for backers to claim."
+                  gradientFrom="#10b981"
+                  gradientTo="#a3e635"
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -492,6 +499,15 @@ export default function Home() {
           </Reveal>
         </section>
 
+        {/* Tailwind custom utilities for animation */}
+        <style>{`
+          @keyframes blob {
+            0%, 100% { transform: translateY(10px); }
+            50% { transform: translate(-10px); }
+          }
+          .animate-blob { animation: blob 2s ease-in-out infinite; }
+          .animation-delay-1000 { animation-delay: -1s; }
+        `}</style>
       </main>
     </TooltipProvider>
   );

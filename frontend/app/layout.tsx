@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Web3Provider } from '@/providers/Web3Provider';
 import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import { ConditionalFooter } from '@/components/layout/ConditionalFooter';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -27,7 +27,7 @@ export default function RootLayout({
           <main className="min-h-screen flex flex-col antialiased pt-16">
             {children}
           </main>
-          <Footer />
+          <ConditionalFooter />
         </Web3Provider>
       </body>
     </html>

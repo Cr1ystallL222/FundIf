@@ -54,7 +54,7 @@ export function Footer() {
         { href: '/explore', label: 'Explore', desc: 'Prediction Markets' },
         { href: '/create', label: 'Create', desc: 'New Campaign' },
         { href: '/docs', label: 'Docs', desc: 'Documentation' },
-        { href: '#', label: 'Whitepaper', desc: 'Technical Paper' },
+        { href: '/whitepaper', label: 'Whitepaper', desc: 'Technical Paper' },
     ]
 
     const socialLinks = [

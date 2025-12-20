@@ -53,7 +53,7 @@ export function Footer() {
         { href: '/', label: 'Home', desc: 'Landing Page' },
         { href: '/explore', label: 'Explore', desc: 'Prediction Markets' },
         { href: '/create', label: 'Create', desc: 'New Campaign' },
-        { href: '#', label: 'Docs', desc: 'Documentation' },
+        { href: '/docs', label: 'Docs', desc: 'Documentation' },
         { href: '#', label: 'Whitepaper', desc: 'Technical Paper' },
     ]
 
@@ -160,3 +160,4 @@ export function Footer() {
         </footer>
     )
 }
+

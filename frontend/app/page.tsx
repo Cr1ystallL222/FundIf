@@ -286,12 +286,12 @@ const ValueCard = ({ icon: Icon, title, desc, gradientFrom, gradientTo }: { icon
       </span>
 
       {/* Content */}
-      <div className="relative z-20 left-0 p-[20px_40px] bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] shadow-lg rounded-lg text-white transition-all duration-500 group-hover:left-[-25px] group-hover:p-[60px_40px] h-full flex flex-col">
-        <div className="mb-6 w-12 h-12 rounded bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+      <div className="relative z-20 left-0 p-[20px_40px] bg-[rgba(9,9,11,0.85)] backdrop-blur-[10px] shadow-lg rounded-lg text-white border border-white/5 transition-all duration-500 group-hover:left-[-25px] group-hover:p-[60px_40px] h-full flex flex-col">
+        <div className="mb-6 w-12 h-12 rounded bg-white/10 flex items-center justify-center group-hover:bg-white/15 transition-colors border border-white/10">
           <Icon className="text-white transition-colors w-6 h-6" />
         </div>
-        <h4 className="text-2xl font-bold mb-3">{title}</h4>
-        <p className="text-base leading-relaxed mb-4 flex-1">{desc}</p>
+        <h4 className="text-2xl font-bold mb-3 text-white">{title}</h4>
+        <p className="text-base leading-relaxed mb-4 flex-1 text-zinc-200">{desc}</p>
       </div>
     </div>
   </Reveal>
@@ -419,8 +419,8 @@ export default function Home() {
                   icon={GitBranch}
                   title="Conditional Triggers"
                   desc="Fund a cause ONLY if a specific event happens. Like donating to a legal defense fund only if charges are filed. This isn't about verifying milestones; it's about programmatic contingency."
-                  gradientFrom="#3b82f6"
-                  gradientTo="#a3e635"
+                  gradientFrom="#1e293b"
+                  gradientTo="#1a2e05"
                 />
               </div>
               <div className="m-4 md:m-[40px_30px]">
@@ -428,8 +428,8 @@ export default function Home() {
                   icon={IdCard}
                   title="Identity & Transparency"
                   desc="Powered by Basenames. You see exactly who you are funding. The contract is verified and open-source, ensuring that once the campaign starts, the creator has zero control over the funds."
-                  gradientFrom="#8b5cf6"
-                  gradientTo="#a3e635"
+                  gradientFrom="#312e81"
+                  gradientTo="#1a2e05"
                 />
               </div>
               <div className="m-4 md:m-[40px_30px]">
@@ -437,8 +437,8 @@ export default function Home() {
                   icon={Shield}
                   title="Guaranteed Refunds"
                   desc="There is no middleman to beg for a refund. If the Polymarket oracle resolves the event to NO, the smart contract automatically unlocks 100% of funds for backers to claim."
-                  gradientFrom="#10b981"
-                  gradientTo="#a3e635"
+                  gradientFrom="#064e3b"
+                  gradientTo="#1a2e05"
                 />
               </div>
             </div>

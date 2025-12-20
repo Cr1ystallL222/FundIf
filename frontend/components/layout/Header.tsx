@@ -226,11 +226,16 @@ export function Header() {
           
           {/* LEFT: Brand Identity */}
           <div className="flex-shrink-0 flex items-center">
-            <Link 
-              href="/" 
-              className="group outline-none"
+            <Link
+              href="/"
+              className="group outline-none flex items-center gap-3"
               aria-label="FundIf Home"
             >
+              <img
+                src="/images/logo.png"
+                alt="FundIf Logo"
+                className="h-8 md:h-10 w-auto transition-opacity duration-300 group-hover:opacity-80"
+              />
               <span className="text-2xl md:text-3xl font-bold tracking-tight font-display transition-colors duration-300">
                 <span className="text-white">Fund</span>
                 <span className="text-[#bef264]">If</span>

@@ -3,7 +3,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ExternalLink, MessageCircle } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 
 // Custom X (Twitter) icon component
 const XIcon = ({ className }: { className?: string }) => (
@@ -16,6 +16,30 @@ const XIcon = ({ className }: { className?: string }) => (
     className={className}
   >
     <path d="M13.795 10.533 20.68 2h-3.073l-5.255 6.517L7.69 2H1l7.806 10.91L1.47 22h3.074l5.705-7.07L15.31 22H22l-8.205-11.467Zm-2.38 2.95L9.97 11.464 4.36 3.627h2.31l4.528 6.317 1.443 2.02 6.018 8.409h-2.31l-4.934-6.89Z"/>
+  </svg>
+)
+
+// Custom Telegram icon component
+const TelegramIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    className={className}
+  >
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4.644 11.94a0.255 0.255 0 0 0 -0.162 0.235c0 0.102 0.067 0.198 0.162 0.234l2.987 1.09 6.154 -3.177a0.154 0.154 0 0 1 0.19 0.05 0.154 0.154 0 0 1 -0.022 0.195L9.536 14.46l4.916 3.558c0.067 0.048 0.157 0.06 0.234 0.032a0.254 0.254 0 0 0 0.156 -0.177L17.3 7.536a0.254 0.254 0 0 0 -0.078 -0.246 0.254 0.254 0 0 0 -0.254 -0.046L4.644 11.94Z"
+      strokeWidth="1"
+    />
+    <path
+      stroke="currentColor"
+      strokeLinejoin="round"
+      d="M1.5 12a10.5 10.5 0 1 0 21 0 10.5 10.5 0 1 0 -21 0"
+      strokeWidth="1"
+    />
   </svg>
 )
 import { FloatingPaths } from '@/components/ui/background-paths'
@@ -32,7 +56,7 @@ export function Footer() {
     ]
 
     const socialLinks = [
-        { href: 'https://t.me', label: 'Telegram', icon: MessageCircle },
+        { href: 'https://t.me', label: 'Telegram', icon: TelegramIcon },
         { href: 'https://x.com', label: 'X', icon: XIcon },
     ]
 

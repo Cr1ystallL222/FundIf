@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState, useEffect } from 'react';
 
 // --- Inline SVG Icons to prevent external dependency errors ---

@@ -86,7 +86,12 @@ export function Footer() {
                         viewport={{ once: true }}
                         className="text-center mb-8"
                     >
-                        <Link href="/" className="inline-block group">
+                        <Link href="/" className="inline-flex items-center gap-4 group">
+                            <img
+                                src="/images/logo.png"
+                                alt="FundIf Logo"
+                                className="h-12 md:h-14 w-auto transition-opacity duration-300 group-hover:opacity-80"
+                            />
                             <span className="text-4xl md:text-5xl font-bold tracking-tight font-display">
                                 <span className="text-white">Fund</span>
                                 <span className="text-[#bef264]">If</span>

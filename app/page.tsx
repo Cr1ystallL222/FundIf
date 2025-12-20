@@ -9,23 +9,14 @@ import React, {
   ReactNode,
 } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-import {
-  motion,
-  AnimatePresence,
+import { 
+  motion, 
+  AnimatePresence, 
   useInView,
   Variants
 } from 'framer-motion';
-
-// Dynamic imports to prevent SSR issues
-const RainingLetters = dynamic(() => import('@/components/ui/modern-animated-hero-section'), {
-  ssr: false,
-  loading: () => null
-});
-const MatrixText = dynamic(() => import('@/components/ui/matrix-text').then(mod => ({ default: mod.MatrixText })), {
-  ssr: false,
-  loading: () => null
-});
+import { FallingPattern } from '@/components/ui/falling-pattern';
+import { MatrixText } from '@/components/ui/matrix-text';
 import { 
     CircleDollarSign, 
     Lock, 
@@ -132,8 +123,23 @@ const LogicVisualizer = () => {
 
     return (
         <div ref={containerRef} className="relative w-full max-w-7xl mx-auto hidden md:block">
-            <div className="relative bg-neutral-950 border border-white/10 rounded-xl p-16 overflow-hidden">
-                <div className="absolute inset-0 bg-grid-white/[0.02] bg-center [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+            <div className="relative bg-black border border-white/10 rounded-xl p-16 overflow-hidden">
+                {/* Grid pattern background */}
+                <div className="absolute inset-0">
+                    <div 
+                        className="w-full h-full"
+                        style={{
+                            backgroundImage: `
+                                linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px)
+                            `,
+                            backgroundSize: '50px 50px',
+                            backgroundPosition: '0 0',
+                        }}
+                    />
+                </div>
+                {/* Subtle overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20 pointer-events-none" />
                 
                 <div className="absolute top-6 left-6 text-xs font-mono text-zinc-500 uppercase tracking-widest">// EXECUTION_FLOW_V1</div>
                 <motion.div 
@@ -182,13 +188,66 @@ const LogicVisualizer = () => {
                         animate={isInView ? { opacity: 1, scale: 1 } : {}}
                         transition={{ delay: 0.4, duration: 0.5 }}
                         className="flex flex-col items-center gap-4 p-6 relative group w-48 text-center bg-black/50 border border-amber-500/40 rounded-2xl"
+                        style={{
+                            boxShadow: `
+                                0 0 40px rgba(245, 158, 11, 0.4),
+                                0 0 80px rgba(245, 158, 11, 0.3),
+                                0 0 120px rgba(245, 158, 11, 0.2),
+                                inset 0 0 20px rgba(245, 158, 11, 0.1)
+                            `
+                        }}
                         {...useTooltip('node-contract', 'Immutable Logic')}
                     >
-                        <div className="w-32 h-32 bg-zinc-900 border border-amber-500/20 rounded-2xl flex items-center justify-center relative">
-                            <Lock className="w-12 h-12 text-amber-500" />
+                        {/* Glow aura layers with animation */}
+                        <motion.div 
+                            className="absolute inset-0 rounded-2xl bg-amber-500/30 blur-2xl -z-10"
+                            animate={{
+                                opacity: [0.3, 0.6, 0.3],
+                                scale: [1, 1.1, 1],
+                            }}
+                            transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                        />
+                        <motion.div 
+                            className="absolute inset-0 rounded-2xl bg-amber-500/20 blur-xl -z-10"
+                            animate={{
+                                opacity: [0.2, 0.4, 0.2],
+                            }}
+                            transition={{
+                                duration: 2.5,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                        />
+                        <motion.div 
+                            className="absolute -inset-4 rounded-2xl bg-amber-500/15 blur-3xl -z-10"
+                            animate={{
+                                opacity: [0.1, 0.3, 0.1],
+                                scale: [1, 1.15, 1],
+                            }}
+                            transition={{
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                        />
+                        
+                        <div className="w-32 h-32 bg-zinc-900 border border-amber-500/20 rounded-2xl flex items-center justify-center relative"
+                            style={{
+                                boxShadow: `
+                                    0 0 30px rgba(245, 158, 11, 0.5),
+                                    0 0 60px rgba(245, 158, 11, 0.3),
+                                    inset 0 0 15px rgba(245, 158, 11, 0.1)
+                                `
+                            }}
+                        >
+                            <Lock className="w-12 h-12 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
                         </div>
                         <div className="text-center">
-                             <MatrixText text="SMART CONTRACT" className="text-sm font-bold text-amber-500 uppercase tracking-wider mb-1" />
+                             <MatrixText text="SMART CONTRACT" className="text-sm font-bold text-amber-500 uppercase tracking-wider mb-1 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
                             <div className="text-xs text-zinc-500">Awaits Resolution</div>
                         </div>
                     </motion.div>
@@ -268,17 +327,40 @@ const ProcessCard = ({ number, title, desc, icon: Icon }: { number: string, titl
 );
 
 // ============================================================================
-// 7. COMPONENT: INTERACTIVE VALUE PROPS
+// 7. COMPONENT: INTERACTIVE VALUE PROPS (Skew Cards)
 // ============================================================================
 
-const ValueCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc: string }) => (
+const ValueCard = ({ icon: Icon, title, desc, gradientFrom, gradientTo }: { icon: any, title: string, desc: string, gradientFrom: string, gradientTo: string }) => (
   <Reveal>
-    <div className="group p-8 bg-zinc-900/30 border border-zinc-800/60 rounded-lg hover:border-lime-500/50 hover:bg-zinc-900/60 transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(132,204,22,0.2)] cursor-default h-full flex flex-col">
-      <div className="mb-6 w-12 h-12 rounded bg-zinc-800/50 flex items-center justify-center group-hover:bg-lime-500/20 transition-colors">
-        <Icon className="text-zinc-400 group-hover:text-lime-400 transition-colors w-6 h-6" />
+    <div className="group relative w-full md:w-[320px] h-[400px] transition-all duration-500">
+      {/* Skewed gradient panels */}
+      <span
+        className="absolute top-0 left-[50px] w-1/2 h-full rounded-lg transform skew-x-[15deg] transition-all duration-500 group-hover:skew-x-0 group-hover:left-[20px] group-hover:w-[calc(100%-90px)]"
+        style={{
+          background: `linear-gradient(315deg, ${gradientFrom}, ${gradientTo})`,
+        }}
+      />
+      <span
+        className="absolute top-0 left-[50px] w-1/2 h-full rounded-lg transform skew-x-[15deg] blur-[30px] transition-all duration-500 group-hover:skew-x-0 group-hover:left-[20px] group-hover:w-[calc(100%-90px)]"
+        style={{
+          background: `linear-gradient(315deg, ${gradientFrom}, ${gradientTo})`,
+        }}
+      />
+
+      {/* Animated blurs */}
+      <span className="pointer-events-none absolute inset-0 z-10">
+        <span className="absolute top-0 left-0 w-0 h-0 rounded-lg opacity-0 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] shadow-[0_5px_15px_rgba(0,0,0,0.08)] transition-all duration-100 animate-blob group-hover:top-[-50px] group-hover:left-[50px] group-hover:w-[100px] group-hover:h-[100px] group-hover:opacity-100" />
+        <span className="absolute bottom-0 right-0 w-0 h-0 rounded-lg opacity-0 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] shadow-[0_5px_15px_rgba(0,0,0,0.08)] transition-all duration-500 animate-blob animation-delay-1000 group-hover:bottom-[-50px] group-hover:right-[50px] group-hover:w-[100px] group-hover:h-[100px] group-hover:opacity-100" />
+      </span>
+
+      {/* Content */}
+      <div className="relative z-20 left-0 p-[20px_40px] bg-[rgba(9,9,11,0.85)] backdrop-blur-[10px] shadow-lg rounded-lg text-white border border-white/5 transition-all duration-500 group-hover:left-[-25px] group-hover:p-[60px_40px] h-full flex flex-col">
+        <div className="mb-6 w-12 h-12 rounded bg-white/10 flex items-center justify-center group-hover:bg-white/15 transition-colors border border-white/10">
+          <Icon className="text-white transition-colors w-6 h-6" />
+        </div>
+        <h4 className="text-2xl font-bold mb-3 text-white">{title}</h4>
+        <p className="text-base leading-relaxed mb-4 flex-1 text-zinc-200">{desc}</p>
       </div>
-      <h4 className="text-xl font-bold text-white mb-3">{title}</h4>
-      <p className="text-sm text-zinc-400 leading-relaxed">{desc}</p>
     </div>
   </Reveal>
 );
@@ -290,9 +372,76 @@ const ValueCard = ({ icon: Icon, title, desc }: { icon: any, title: string, desc
 export default function Home() {
   return (
     <TooltipProvider>
-      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden" suppressHydrationWarning={true}>
+      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
         
-        <RainingLetters />
+        {/* Hero Section */}
+        <div className="relative w-full h-screen bg-black overflow-hidden">
+          <FallingPattern
+            color="#a3e635"
+            backgroundColor="#000000"
+            duration={150}
+            blurIntensity="1em"
+            density={1}
+            className="absolute inset-0"
+          />
+
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 text-center w-full px-4">
+            <div className="max-w-4xl mx-auto relative z-10">
+              {/* Headline */}
+              <motion.h1
+                className="text-6xl md:text-8xl font-bold text-white leading-[0.9] tracking-tighter mb-10"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              >
+                Fund the Future, <br />
+                <span className="text-lime-400">
+                  On <span className="underline decoration-4 decoration-lime-400 underline-offset-[12px]">Your</span> Terms.
+                </span>
+              </motion.h1>
+
+              {/* Subhead */}
+              <motion.p
+                className="text-xl text-zinc-400 max-w-xl leading-relaxed mb-12 mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.7 }}
+              >
+                A crowdfunding protocol tied to reality. Funds held in escrow and unlock <span className="text-white font-semibold">only</span> if a specific prediction market event resolves to <span className="text-lime-400 font-semibold">YES</span>.
+              </motion.p>
+
+              {/* Buttons */}
+              <motion.div
+                className="flex flex-col sm:flex-row items-center justify-center gap-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.7 }}
+              >
+                <Link href="/create" className="w-full sm:w-auto">
+                  <button className="w-full sm:w-auto px-10 py-5 bg-white text-black rounded-sm font-medium hover:bg-gray-200 transition-all flex items-center justify-center gap-3 text-base">
+                    Create Campaign
+                    <CornerDownRight className="opacity-70" />
+                  </button>
+                </Link>
+
+                <a
+                  href="https://github.com/loganstaples/FundIf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto"
+                >
+                  <button className="w-full sm:w-auto px-10 py-5 bg-transparent border border-zinc-700 text-zinc-300 font-medium rounded-sm hover:bg-zinc-800 hover:border-zinc-600 transition-all flex items-center justify-center gap-3 text-base">
+                    Read Protocol Docs
+                    <ArrowRight className="opacity-50" />
+                  </button>
+                </a>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Gradient Mask */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent z-30" />
+        </div>
 
         {/* SECTION: HOW IT WORKS (LOGIC) */}
         <section className="py-32 px-6 border-b border-white/5 bg-[#050505]">
@@ -332,22 +481,34 @@ export default function Home() {
               </p>
             </Reveal>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <ValueCard 
-                icon={GitBranch}
-                title="Conditional Triggers"
-                desc="Fund a cause ONLY if a specific event happens. Like donating to a legal defense fund only if charges are filed. This isn't about verifying milestones; it's about programmatic contingency."
-              />
-              <ValueCard 
-                icon={IdCard}
-                title="Identity & Transparency"
-                desc="Powered by Basenames. You see exactly who you are funding. The contract is verified and open-source, ensuring that once the campaign starts, the creator has zero control over the funds."
-              />
-              <ValueCard 
-                icon={Shield}
-                title="Guaranteed Refunds"
-                desc="There is no middleman to beg for a refund. If the Polymarket oracle resolves the event to NO, the smart contract automatically unlocks 100% of funds for backers to claim."
-              />
+            <div className="flex justify-center items-start flex-wrap py-10">
+              <div className="m-4 md:m-[40px_30px]">
+                <ValueCard 
+                  icon={GitBranch}
+                  title="Conditional Triggers"
+                  desc="Fund a cause ONLY if a specific event happens. Like donating to a legal defense fund only if charges are filed. This isn't about verifying milestones; it's about programmatic contingency."
+                  gradientFrom="#1e293b"
+                  gradientTo="#1a2e05"
+                />
+              </div>
+              <div className="m-4 md:m-[40px_30px]">
+                <ValueCard 
+                  icon={IdCard}
+                  title="Identity & Transparency"
+                  desc="Powered by Basenames. You see exactly who you are funding. The contract is verified and open-source, ensuring that once the campaign starts, the creator has zero control over the funds."
+                  gradientFrom="#312e81"
+                  gradientTo="#1a2e05"
+                />
+              </div>
+              <div className="m-4 md:m-[40px_30px]">
+                <ValueCard 
+                  icon={Shield}
+                  title="Guaranteed Refunds"
+                  desc="There is no middleman to beg for a refund. If the Polymarket oracle resolves the event to NO, the smart contract automatically unlocks 100% of funds for backers to claim."
+                  gradientFrom="#064e3b"
+                  gradientTo="#1a2e05"
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -389,23 +550,15 @@ export default function Home() {
           </div>
         </section>
 
-        {/* CTA FOOTER */}
-        <section className="py-32 px-6 border-t border-white/5 text-center">
-          <Reveal>
-            <div className="max-w-2xl mx-auto">
-              <h2 className="text-5xl font-bold text-white mb-8 tracking-tight">Ready to build?</h2>
-              <p className="text-zinc-400 mb-10 text-lg">
-                Launch a conditional campaign in minutes.
-              </p>
-              <Link href="/create">
-                <button className="px-12 py-5 bg-lime-400 text-black font-bold text-lg rounded-sm hover:bg-lime-300 transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_-10px_rgba(163,230,53,0.4)]">
-                  Create Campaign
-                </button>
-              </Link>
-            </div>
-          </Reveal>
-        </section>
-
+        {/* Tailwind custom utilities for animation */}
+        <style>{`
+          @keyframes blob {
+            0%, 100% { transform: translateY(10px); }
+            50% { transform: translate(-10px); }
+          }
+          .animate-blob { animation: blob 2s ease-in-out infinite; }
+          .animation-delay-1000 { animation-delay: -1s; }
+        `}</style>
       </main>
     </TooltipProvider>
   );

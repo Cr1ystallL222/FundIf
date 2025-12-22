@@ -73,3 +73,4 @@ export function TypingAnimationStyled({
     </span>
   );
 }
+

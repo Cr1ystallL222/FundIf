@@ -6,6 +6,7 @@ import { formatUnits, type Address } from 'viem';
 import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import { CreatorBadge } from '@/components/ui/CreatorBadge';
+import { CampaignImage } from './CampaignImage';
 
 const CampaignABI = [
   {
@@ -320,8 +321,9 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
   const isExpired = deadline ? Number(deadline) * 1000 < Date.now() : false;
 
   // --- IMAGE URL CONSTRUCTION ---
-  // We assume the image is stored as "[address].png" in the bucket
+  // Use Supabase storage for campaign images with fallback
   const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/campaign-images/${campaignAddress}.png`;
+  const fallbackUrl = "/images/placeholder-campaign.svg";
 
   const formatMoney = (val: bigint) => 
     `$${Number(formatUnits(val || 0n, 6)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
@@ -361,17 +363,15 @@ export default function CampaignCard({ campaignAddress }: CampaignCardProps) {
           <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-black z-0" />
           
           <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0e] to-transparent z-10" />
-          <img 
-            src={imageUrl} 
-            alt={title}
-            // Handle Error: If 404 (no image), hide the img tag and show the gradient parent
-            onError={(e) => {
-               e.currentTarget.style.display = 'none';
-               // Optionally add a more colorful gradient class to the parent
-               e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', 'from-zinc-800', 'to-zinc-900');
-            }}
+          
+          {/* Auto-generated campaign image */}
+          <CampaignImage 
+            title={title || "Campaign"} 
+            description={description || ""} 
+            address={campaignAddress}
             className="relative z-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out opacity-80 group-hover:opacity-100"
           />
+          
           <div className="absolute top-3 left-3 z-20">
             <div className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md ${statusStyles}`}>
               {statusLabel}

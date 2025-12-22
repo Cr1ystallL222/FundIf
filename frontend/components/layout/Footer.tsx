@@ -53,6 +53,7 @@ export function Footer() {
         { href: '/', label: 'Home', desc: 'Landing Page' },
         { href: '/explore', label: 'Explore', desc: 'Prediction Markets' },
         { href: '/create', label: 'Create', desc: 'New Campaign' },
+        { href: '/token', label: 'Token', desc: '$FUNDIF' },
         { href: '/docs', label: 'Docs', desc: 'Documentation' },
         { href: '/whitepaper', label: 'Whitepaper', desc: 'Technical Paper' },
     ]

@@ -11,30 +11,30 @@ import { ConnectButton } from '@/components/wallet/ConnectButton';
 // 1. ICONS
 // ============================================================================
 
-const ICON_PROPS = { strokeWidth: 1.5, className: "w-[18px] h-[18px]" };
+const ICON_PROPS = { strokeWidth: 2, className: "w-[20px] h-[20px]", fill: "none" };
 
 const HomeIcon = () => (
-  <svg {...ICON_PROPS} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+  <svg {...ICON_PROPS} viewBox="0 0 24 24" stroke="currentColor">
     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" strokeLinecap="round" strokeLinejoin="round"/>
     <polyline points="9 22 9 12 15 12 15 22" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
 const ExploreIcon = () => (
-  <svg {...ICON_PROPS} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+  <svg {...ICON_PROPS} viewBox="0 0 24 24" stroke="currentColor">
     <circle cx="12" cy="12" r="10" strokeLinecap="round" strokeLinejoin="round"/>
     <path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
 const CreateIcon = () => (
-  <svg {...ICON_PROPS} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+  <svg {...ICON_PROPS} viewBox="0 0 24 24" stroke="currentColor">
     <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
 const DashboardIcon = () => (
-  <svg {...ICON_PROPS} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+  <svg {...ICON_PROPS} viewBox="0 0 24 24" stroke="currentColor">
     <rect x="3" y="3" width="7" height="9" rx="1" strokeLinecap="round" strokeLinejoin="round"/>
     <rect x="14" y="3" width="7" height="5" rx="1" strokeLinecap="round" strokeLinejoin="round"/>
     <rect x="14" y="12" width="7" height="9" rx="1" strokeLinecap="round" strokeLinejoin="round"/>
@@ -43,14 +43,14 @@ const DashboardIcon = () => (
 );
 
 const DocsIcon = () => (
-  <svg {...ICON_PROPS} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+  <svg {...ICON_PROPS} viewBox="0 0 24 24" stroke="currentColor">
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" strokeLinecap="round" strokeLinejoin="round"/>
     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
 const WhitepaperIcon = () => (
-  <svg {...ICON_PROPS} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+  <svg {...ICON_PROPS} viewBox="0 0 24 24" stroke="currentColor">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeLinecap="round" strokeLinejoin="round"/>
     <polyline points="14 2 14 8 20 8" strokeLinecap="round" strokeLinejoin="round"/>
     <line x1="16" y1="13" x2="8" y2="13" strokeLinecap="round" strokeLinejoin="round"/>
@@ -59,8 +59,17 @@ const WhitepaperIcon = () => (
   </svg>
 );
 
+const TokenIcon = () => (
+  <svg {...ICON_PROPS} viewBox="0 0 24 24" stroke="currentColor">
+    <circle cx="12" cy="12" r="9" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8.5 9.5h6.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8.5 14.5h6.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12 7.5v9" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const MenuIcon = () => (
-  <svg {...ICON_PROPS} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+  <svg {...ICON_PROPS} viewBox="0 0 24 24" stroke="currentColor">
     <line x1="4" x2="20" y1="12" y2="12" strokeLinecap="round" strokeLinejoin="round"/>
     <line x1="4" x2="20" y1="6" y2="6" strokeLinecap="round" strokeLinejoin="round"/>
     <line x1="4" x2="20" y1="18" y2="18" strokeLinecap="round" strokeLinejoin="round"/>
@@ -68,7 +77,7 @@ const MenuIcon = () => (
 );
 
 const CloseIcon = () => (
-  <svg {...ICON_PROPS} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+  <svg {...ICON_PROPS} viewBox="0 0 24 24" stroke="currentColor">
     <path d="M18 6 6 18" strokeLinecap="round" strokeLinejoin="round"/>
     <path d="M6 6 18 18" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
@@ -150,6 +159,7 @@ const NAV_LINKS = [
   { href: '/explore', label: 'Explore', Icon: ExploreIcon, desc: 'Prediction Markets' },
   { href: '/create', label: 'Create', Icon: CreateIcon, desc: 'New Campaign' },
   { href: '/profile', label: 'Dashboard', Icon: DashboardIcon, authRequired: true, desc: 'Your Positions' },
+  { href: '/token', label: 'Token', Icon: TokenIcon, desc: '$FUNDIF' },
   { href: '/docs', label: 'Docs', Icon: DocsIcon, desc: 'Documentation' },
   { href: '/whitepaper', label: 'Whitepaper', Icon: WhitepaperIcon, desc: 'Technical Paper' },
 ];
@@ -244,7 +254,7 @@ export function Header() {
           </div>
 
           {/* CENTER: Navigation (Absolutely Positioned to ensure true center) */}
-          <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center p-1 bg-white/[0.02] border border-white/[0.05] rounded-full backdrop-blur-sm">
+          <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center p-1.5 bg-white/[0.02] border border-white/[0.05] rounded-full backdrop-blur-sm gap-1">
             {visibleLinks.map((link) => {
               const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
               
@@ -252,7 +262,7 @@ export function Header() {
                 <Tooltip key={link.href} text={link.desc}>
                   <Link
                     href={link.href}
-                    className={`relative px-5 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
+                    className={`relative h-12 min-w-0 flex items-center justify-center px-6 rounded-full text-sm font-medium transition-colors duration-300 ${
                       isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
                     }`}
                   >
@@ -263,8 +273,10 @@ export function Header() {
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                       />
                     )}
-                    <span className="relative z-10 flex items-center gap-2">
-                      <link.Icon />
+                    <span className="relative z-10 flex items-center gap-3">
+                      <div className="flex-shrink-0">
+                        <link.Icon />
+                      </div>
                       {link.label}
                     </span>
                   </Link>

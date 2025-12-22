@@ -6,8 +6,8 @@ import { Footer } from './Footer';
 export function ConditionalFooter() {
   const pathname = usePathname();
 
-  // Не показывать Footer на странице /docs
-  if (pathname.startsWith('/docs')) {
+  // Не показывать Footer на странице /docs, /token и /explore
+  if (pathname.startsWith('/docs') || pathname.startsWith('/token') || pathname.startsWith('/explore')) {
     return null;
   }
 

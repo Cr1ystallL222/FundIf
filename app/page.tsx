@@ -253,10 +253,10 @@ const LogicVisualizer = () => {
                     </motion.div>
 
                     {/* Connector 2 (Split) */}
-                    <div className="relative h-32 w-48 flex items-center justify-center">
-                         <svg className="absolute w-full h-full overflow-visible">
-                            <motion.path d="M0 64 C 60 64, 80 20, 140 20" fill="none" stroke="#a3e635" strokeWidth="1.5" strokeDasharray="4 4" animate={{ strokeDashoffset: [0, -8] }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}/>
-                            <motion.path d="M0 64 C 60 64, 80 108, 140 108" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4 4" animate={{ strokeDashoffset: [0, 8] }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}/>
+                    <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden mr-4">
+                         <svg className="absolute w-full h-full" viewBox="0 0 80 128">
+                            <motion.path d="M0 64 C 25 64, 35 25, 60 25" fill="none" stroke="#a3e635" strokeWidth="1.5" strokeDasharray="4 4" animate={{ strokeDashoffset: [0, -8] }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}/>
+                            <motion.path d="M0 64 C 25 64, 35 103, 60 103" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4 4" animate={{ strokeDashoffset: [0, 8] }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}/>
                         </svg>
                     </div>
 

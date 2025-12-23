@@ -86,7 +86,7 @@ const TooltipProvider = ({ children }: { children: ReactNode }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 2 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[9999] pointer-events-none px-3 py-2 rounded-md border border-lime-400/30 bg-[#111113] shadow-[0_0_30px_-10px_rgba(163,230,53,0.2)]"
+            className="fixed z-[9999] pointer-events-none px-3 py-2 rounded-md border border-lime-400/30 bg-[#111113] shadow-[0_0_30px_-10px_rgba(34,197,94,0.2)]"
             style={{ left: state.x, top: state.y - 16, transform: 'translate(-50%, -100%)' }}
           >
             <div className="text-[11px] font-mono text-lime-400 uppercase tracking-wide">
@@ -123,7 +123,7 @@ const ProcessCard = ({ number, title, desc, icon: Icon }: { number: string, titl
   <Reveal className="flex gap-8 relative group">
     {/* Left Column: Number & Line */}
     <div className="flex flex-col items-center">
-      <div className="w-12 h-12 rounded-md bg-[#111] border border-zinc-800 flex items-center justify-center text-sm font-mono text-zinc-500 group-hover:border-lime-500 group-hover:text-lime-400 transition-colors duration-300 z-10">
+      <div className="w-12 h-12 rounded-md bg-[#111] border border-zinc-800 flex items-center justify-center text-sm font-mono text-zinc-500 group-hover:border-lime-400 group-hover:text-lime-400 transition-colors duration-300 z-10">
         {number}
       </div>
       <div className="w-[1px] flex-1 bg-zinc-800 group-last:hidden my-2" />
@@ -188,7 +188,7 @@ const ValueCard = ({ icon: Icon, title, desc, gradientFrom, gradientTo }: { icon
 export default function Home() {
   return (
     <TooltipProvider>
-      <main className="min-h-screen bg-[#09090b] selection:bg-lime-500/20 selection:text-lime-200 overflow-hidden">
+      <main className="min-h-screen bg-[#09090b] selection:bg-lime-400/20 selection:text-lime-200 overflow-hidden">
         
         {/* Hero Section */}
         <div className="relative w-full h-screen bg-black overflow-hidden">
@@ -310,7 +310,7 @@ export default function Home() {
           <div className="max-w-4xl mx-auto">
             <Reveal className="mb-20 text-center">
                <h2 className="text-3xl font-bold text-white">System Operations</h2>
-               <div className="h-1 w-20 bg-lime-500 mx-auto mt-4 rounded-full" />
+               <div className="h-1 w-20 bg-lime-400 mx-auto mt-4 rounded-full" />
             </Reveal>
 
             <div className="pl-4 md:pl-0">
@@ -342,14 +342,208 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Tailwind custom utilities for animation */}
+        {/* SECTION: ABOUT FUNDIF */}
+        <section className="py-32 px-6 bg-gradient-to-b from-[#000] to-[#09090b]">
+          <div className="max-w-6xl mx-auto">
+            <Reveal className="mb-20 text-center" delay={0}>
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+                What is <span className="text-lime-400 animate-pulse-slow">FundIf</span>?
+              </h2>
+              <div className="h-1 w-20 bg-lime-400 mx-auto mt-4 rounded-full animate-expand" />
+            </Reveal>
+
+            <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+              <Reveal className="order-2 md:order-1" delay={0.2}>
+                <div className="glass-panel p-8 md:p-10 group hover:scale-[1.02] transition-all duration-500 ease-out">
+                  <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+                    <CircleDollarSign className="text-lime-400 group-hover:rotate-12 transition-transform duration-300" />
+                    Revolutionary Crowdfunding
+                  </h3>
+                  <p className="text-zinc-300 text-lg leading-relaxed mb-6">
+                    FundIf transforms crowdfunding by eliminating trust issues. Instead of hoping creators deliver on their promises, your funds are <span className="text-lime-400 font-semibold relative group-hover:text-lime-300 transition-colors duration-300">programmatically locked</span> and only released when real-world conditions are met.
+                  </p>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 group/item hover:translate-x-2 transition-all duration-300">
+                      <CheckCircle className="text-lime-400 mt-1 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-300" />
+                      <div>
+                        <h4 className="text-white font-semibold mb-1 group-hover/item:text-lime-400 transition-colors duration-300">No More Broken Promises</h4>
+                        <p className="text-zinc-400 text-sm">Funds are released automatically when conditions are met, not when creators say they're ready.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 group/item hover:translate-x-2 transition-all duration-300" style={{ animationDelay: '0.1s' }}>
+                      <CheckCircle className="text-lime-400 mt-1 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-300" />
+                      <div>
+                        <h4 className="text-white font-semibold mb-1 group-hover/item:text-lime-400 transition-colors duration-300">Oracle-Powered Truth</h4>
+                        <p className="text-zinc-400 text-sm">Powered by Polymarket and UMA oracles to verify real-world events with cryptographic certainty.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 group/item hover:translate-x-2 transition-all duration-300" style={{ animationDelay: '0.2s' }}>
+                      <CheckCircle className="text-lime-400 mt-1 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-300" />
+                      <div>
+                        <h4 className="text-white font-semibold mb-1 group-hover/item:text-lime-400 transition-colors duration-300">Complete Transparency</h4>
+                        <p className="text-zinc-400 text-sm">Every transaction, condition, and outcome is recorded on-chain for anyone to verify.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+
+              <Reveal className="order-1 md:order-2" delay={0.4}>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-lime-400/20 to-transparent blur-3xl group-hover:from-lime-400/30 transition-all duration-700" />
+                  <div className="relative glass-panel p-8 md:p-10 border-lime-400/20 hover:border-lime-400/40 transition-all duration-500">
+                    <h3 className="text-xl font-bold text-lime-400 mb-6 font-mono uppercase tracking-wider group-hover:tracking-widest transition-all duration-500">Key Features</h3>
+                    <div className="space-y-6">
+                      <div className="group feature-item">
+                        <h4 className="text-white font-semibold text-lg mb-2 group-hover:text-lime-400 transition-colors duration-300 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-lime-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse-subtle" />
+                          Conditional Funding Logic
+                        </h4>
+                        <p className="text-zinc-400 group-hover:text-zinc-300 transition-colors duration-300">
+                          Create campaigns that unlock funding only when specific events occur - elections, product launches, legal outcomes, or any verifiable real-world scenario.
+                        </p>
+                      </div>
+                      <div className="group feature-item" style={{ animationDelay: '0.1s' }}>
+                        <h4 className="text-white font-semibold text-lg mb-2 group-hover:text-lime-400 transition-colors duration-300 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-lime-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse-subtle" />
+                          Automatic Refunds
+                        </h4>
+                        <p className="text-zinc-400 group-hover:text-zinc-300 transition-colors duration-300">
+                          If conditions aren't met, every contributor gets their funds back automatically. No begging, no disputes, no lost investments.
+                        </p>
+                      </div>
+                      <div className="group feature-item" style={{ animationDelay: '0.2s' }}>
+                        <h4 className="text-white font-semibold text-lg mb-2 group-hover:text-lime-400 transition-colors duration-300 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-lime-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse-subtle" />
+                          Decentralized Governance
+                        </h4>
+                        <p className="text-zinc-400 group-hover:text-zinc-300 transition-colors duration-300">
+                          Built on blockchain technology with smart contracts that execute exactly as written, eliminating middlemen and reducing costs.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+
+            <Reveal className="text-center" delay={0.6}>
+              <div className="glass-panel-subtle p-8 md:p-10 max-w-4xl mx-auto group hover:scale-[1.01] transition-all duration-700">
+                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-lime-400 transition-colors duration-500">
+                  Ready to Fund the Future?
+                </h3>
+                <p className="text-zinc-300 text-lg mb-8 leading-relaxed group-hover:text-zinc-200 transition-colors duration-500">
+                  Join thousands of users who are already using FundIf to create transparent, 
+                  conditional crowdfunding campaigns that actually deliver results.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link href="/explore" className="group">
+                    <button className="w-full sm:w-auto px-8 py-4 bg-lime-400 text-black font-semibold rounded-lg hover:bg-lime-300 hover:shadow-lg hover:shadow-lime-400/25 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2">
+                      <span className="relative">
+                        Explore Campaigns
+                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black group-hover:w-full transition-all duration-300"></span>
+                      </span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 group-hover:scale-110 transition-all duration-300" />
+                    </button>
+                  </Link>
+                  <Link href="/create" className="group">
+                    <button className="w-full sm:w-auto px-8 py-4 bg-transparent border border-lime-400/50 text-lime-400 font-semibold rounded-lg hover:bg-lime-400/10 hover:border-lime-400 hover:shadow-lg hover:shadow-lime-400/15 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2">
+                      <span className="relative">
+                        Start Your Campaign
+                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-lime-400 group-hover:w-full transition-all duration-300"></span>
+                      </span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 group-hover:scale-110 transition-all duration-300" />
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* Enhanced Tailwind custom utilities for animation */}
         <style>{`
           @keyframes blob {
             0%, 100% { transform: translateY(10px); }
             50% { transform: translate(-10px); }
           }
+          
+          @keyframes expand {
+            from {
+              width: 0;
+              opacity: 0;
+            }
+            to {
+              width: 5rem;
+              opacity: 1;
+            }
+          }
+          
+          @keyframes pulse-slow {
+            0%, 100% {
+              opacity: 1;
+              filter: brightness(1);
+            }
+            50% {
+              opacity: 0.8;
+              filter: brightness(1.2);
+            }
+          }
+          
+          @keyframes pulse-subtle {
+            0%, 100% {
+              opacity: 0.6;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 1;
+              transform: scale(1.2);
+            }
+          }
+          
+          @keyframes slide-in-stagger {
+            from {
+              opacity: 0;
+              transform: translateX(-20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+          
           .animate-blob { animation: blob 2s ease-in-out infinite; }
           .animation-delay-1000 { animation-delay: -1s; }
+          .animate-expand { animation: expand 0.8s ease-out forwards; }
+          .animate-pulse-slow { animation: pulse-slow 3s ease-in-out infinite; }
+          .animate-pulse-subtle { animation: pulse-subtle 2s ease-in-out infinite; }
+          
+          .feature-item {
+            animation: slide-in-stagger 0.6s ease-out forwards;
+            opacity: 0;
+          }
+          
+          .feature-item:nth-child(1) { animation-delay: 0.1s; }
+          .feature-item:nth-child(2) { animation-delay: 0.2s; }
+          .feature-item:nth-child(3) { animation-delay: 0.3s; }
+          
+          /* Performance optimizations */
+          .glass-panel,
+          .glass-panel-subtle {
+            will-change: transform;
+            backface-visibility: hidden;
+            perspective: 1000px;
+          }
+          
+          /* Reduced motion support */
+          @media (prefers-reduced-motion: reduce) {
+            .animate-expand,
+            .animate-pulse-slow,
+            .animate-pulse-subtle,
+            .feature-item {
+              animation: none !important;
+            }
+          }
         `}</style>
       </main>
     </TooltipProvider>

@@ -424,7 +424,7 @@ export default function CreateCampaignPage() {
   // MAIN FORM
   // ===========================================================================
   return (
-    <div className="min-h-screen bg-surface text-white selection:bg-lime-500/30 selection:text-lime-200 pb-20">
+    <div className="min-h-screen bg-surface text-white selection:bg-lime-500/30 selection:text-lime-200">
       <div className="fixed top-0 left-0 right-0 h-96 bg-linear-to-b from-lime-900/10 via-surface/50 to-surface pointer-events-none z-0" />
       
       <main className="relative z-10 max-w-7xl mx-auto px-6 pt-12 lg:pt-20">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, useRef, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAccount } from 'wagmi';
@@ -172,6 +172,9 @@ export function Header() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [activeTabBounds, setActiveTabBounds] = useState({ width: 0, left: 0 });
+  const navRefs = useRef<{ [key: string]: HTMLAnchorElement | null }>({});
+  const activeTabBoundsRef = useRef({ width: 0, left: 0 });
   
   const pathname = usePathname();
   
@@ -183,6 +186,8 @@ export function Header() {
   } catch (e) {
     isConnected = false;
   }
+
+  const visibleLinks = NAV_LINKS.filter(l => !l.authRequired || isConnected);
 
   // Robust Scroll Handler
   useEffect(() => {
@@ -208,9 +213,41 @@ export function Header() {
     setIsMobileOpen(false);
   }, [pathname]);
 
-  if (isLoading) return <HeaderSkeleton />;
+  // Update active tab bounds when route changes or window resizes
+  useEffect(() => {
+    const updateActiveTabBounds = () => {
+      const activeLink = visibleLinks.find(
+        link => pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
+      );
+      
+      if (activeLink && navRefs.current[activeLink.href]) {
+        const activeElement = navRefs.current[activeLink.href];
+        if (activeElement) {
+          const rect = activeElement.getBoundingClientRect();
+          const parentRect = activeElement.parentElement?.getBoundingClientRect();
+          
+          if (parentRect) {
+            const newBounds = {
+              width: rect.width,
+              left: rect.left - parentRect.left
+            };
+            
+            // Only update if bounds actually changed
+            if (newBounds.width !== activeTabBoundsRef.current.width || newBounds.left !== activeTabBoundsRef.current.left) {
+              activeTabBoundsRef.current = newBounds;
+              setActiveTabBounds(newBounds);
+            }
+          }
+        }
+      }
+    };
 
-  const visibleLinks = NAV_LINKS.filter(l => !l.authRequired || isConnected);
+    updateActiveTabBounds();
+    window.addEventListener('resize', updateActiveTabBounds);
+    return () => window.removeEventListener('resize', updateActiveTabBounds);
+  }, [pathname, visibleLinks]);
+
+  if (isLoading) return <HeaderSkeleton />;
 
   return (
     <motion.header
@@ -253,36 +290,49 @@ export function Header() {
             </Link>
           </div>
 
-          {/* CENTER: Navigation (Absolutely Positioned to ensure true center) */}
-          <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center p-1.5 bg-white/[0.02] border border-white/[0.05] rounded-full backdrop-blur-sm gap-1">
-            {visibleLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
-              
-              return (
-                <Tooltip key={link.href} text={link.desc}>
-                  <Link
-                    href={link.href}
-                    className={`relative h-12 min-w-0 flex items-center justify-center px-6 rounded-full text-sm font-medium transition-colors duration-300 ${
-                      isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="nav-pill"
-                        className="absolute inset-0 bg-white/[0.08] rounded-full border border-white/[0.05] shadow-sm"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                      />
-                    )}
-                    <span className="relative z-10 flex items-center gap-3">
-                      <div className="flex-shrink-0">
-                        <link.Icon />
-                      </div>
-                      {link.label}
-                    </span>
-                  </Link>
-                </Tooltip>
-              );
-            })}
+          {/* CENTER: Capsule Navigation */}
+          <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="relative flex items-center h-14 px-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl backdrop-blur-md shadow-lg">
+              {/* Navigation Tabs */}
+              <div className="relative flex items-center gap-0.5">
+                {visibleLinks.map((link, index) => {
+                  const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+                  const totalTabs = visibleLinks.length;
+                  
+                  return (
+                    <Tooltip key={link.href} text={link.desc}>
+                      <Link
+                        ref={(el) => { navRefs.current[link.href] = el; }}
+                        href={link.href}
+                        className="relative h-12 flex items-center justify-center px-4 text-sm font-medium transition-all duration-300 group"
+                        style={{
+                          minWidth: `${100 / totalTabs}%`,
+                          maxWidth: '220px'
+                        }}
+                      >
+                        <span className="flex items-center justify-center gap-2.5 whitespace-nowrap relative">
+                          {/* Icon - always visible */}
+                          <div className={`flex-shrink-0 transition-all duration-200 ease-out ${
+                            isActive ? 'text-white scale-110' : 'text-zinc-500 scale-100 group-hover:text-zinc-300'
+                          }`}>
+                            <link.Icon />
+                          </div>
+                          
+                          {/* Text - always visible now */}
+                          <span className={`block transition-all duration-200 ease-out ${
+                            isActive 
+                              ? 'opacity-100 translate-x-0 text-white' 
+                              : 'opacity-60 translate-x-0 text-zinc-500 group-hover:opacity-80 group-hover:text-zinc-300'
+                          }`}>
+                            {link.label}
+                          </span>
+                        </span>
+                      </Link>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </div>
           </nav>
 
           {/* RIGHT: Actions */}

@@ -61,7 +61,7 @@ export function Footer() {
                     rangeHue={60}
                     baseSpeed={0.0}
                     rangeSpeed={1.5}
-                    backgroundColor="#09090b"
+                    backgroundColor="#000000"
                 >
                     {/* Content Overlay */}
                     <div className="relative z-10 w-full max-w-6xl mx-auto px-6 h-full flex items-center">

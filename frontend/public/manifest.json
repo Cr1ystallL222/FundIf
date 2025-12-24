@@ -1,7 +1,7 @@
 {
   "name": "FundIf - Prediction-Gated Crowdfunding",
   "short_name": "FundIf",
-  "description": "A prediction-gated crowdfunding platform built on Base Sepolia",
+  "description": "A prediction-gated crowdfunding platform built on Base",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

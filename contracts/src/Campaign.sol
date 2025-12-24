@@ -188,7 +188,7 @@ contract Campaign {
         require(resolved, "Not resolved yet");
         require(!outcomeYes, "Outcome was YES");
         
-        // Open access for hackathon demo speed, or add require(msg.sender == creator)
+        // Open access for convenience, or add require(msg.sender == creator) for additional security
         
         for (uint256 i = 0; i < _contributors.length; i++) {
             address contributor = _contributors[i];

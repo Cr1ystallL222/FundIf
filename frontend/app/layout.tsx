@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'FundIf - Prediction-Gated Crowdfunding',
-  description: 'A prediction-gated crowdfunding platform built on Base Sepolia. Create and fund campaigns with prediction markets.',
+  description: 'A prediction-gated crowdfunding platform built on Base. Create and fund campaigns with prediction markets.',
   keywords: ['crowdfunding', 'prediction markets', 'web3', 'Base', 'blockchain'],
   icons: {
     icon: '/favicon.ico',

@@ -5,7 +5,6 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useCampaign } from '@/hooks/useCampaign';
 import { FundForm } from '@/components/forms/FundForm';
 import ResolutionActions from '@/components/campaign/ResolutionActions';
-import { OracleController } from '@/components/debug/OracleController';
 import { CreatorBadge } from '@/components/ui/CreatorBadge';
 
 /* ==========================================
@@ -434,10 +433,6 @@ export default function CampaignPage({ params }: CampaignPageProps) {
                       <div className="text-sm text-white font-mono">{formattedDeadline}</div>
                    </div>
                 </div>
-              </motion.div>
-
-              <motion.div variants={anim.item} className="opacity-50 hover:opacity-100 transition-opacity">
-                 <OracleController conditionId={campaign.conditionId} campaignAddress={address} />
               </motion.div>
 
             </div>

@@ -6,8 +6,8 @@ import "./interfaces/IOracle.sol";
 /**
  * @title MockOracle
  * @author Logan Staples
- * @notice A mock prediction market oracle for demonstration and testing purposes
- * @dev Simulates a prediction market oracle like Polymarket or UMA for hackathon demo.
+ * @notice A mock prediction market oracle for development and testing purposes
+ * @dev Simulates a prediction market oracle like Polymarket or UMA.
  *      In production, this would be replaced with actual oracle integrations.
  *      This contract allows an owner to manually set outcomes for prediction conditions,
  *      which Campaign contracts then query to determine fund release or refund.
@@ -65,7 +65,7 @@ contract MockOracle is IOracle {
     /**
      * @notice Initializes the MockOracle with the deployer as owner
      * @dev The owner has exclusive rights to set prediction outcomes.
-     *      This centralized control is acceptable for hackathon demos but
+     *      This centralized control is for development purposes and
      *      would be replaced with decentralized resolution in production.
      */
     constructor() {
@@ -80,10 +80,10 @@ contract MockOracle is IOracle {
      * @notice Sets the outcome for a prediction condition
      * @dev Only callable by the contract owner. Marks the condition as resolved
      *      and stores the outcome. Once resolved, subsequent calls will overwrite
-     *      the previous outcome (acceptable for demo; production would prevent this).
+     *      the previous outcome (acceptable for development; production would prevent this).
      *
      * @param conditionId The unique identifier for the prediction condition.
-     *        For demos, use keccak256 of a descriptive string like
+     *        For development, use keccak256 of a descriptive string like
      *        keccak256("eth-price-above-5000-jan-2025").
      *        In production, would map to actual Polymarket market IDs.
      *

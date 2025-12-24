@@ -6,13 +6,13 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 /**
  * @title MockUSDC
  * @author FundIf Team
- * @notice A mock USDC token for testnet and demo purposes in the FundIf platform
+ * @notice A mock USDC token for development and testing purposes in the FundIf platform
  * @dev This contract simulates USDC behavior for the FundIf prediction-gated 
  *      crowdfunding platform. It allows unrestricted minting for testing purposes,
  *      which would never be permitted in production. Uses 6 decimals to match 
  *      real USDC on mainnet for seamless migration.
  *
- * @custom:hackathon This is a demonstration contract - DO NOT deploy to mainnet
+ * @custom:security This is a development contract - DO NOT deploy to mainnet
  */
 contract MockUSDC is ERC20 {
     /*//////////////////////////////////////////////////////////////
@@ -94,7 +94,7 @@ contract MockUSDC is ERC20 {
 
     /**
      * @notice Distributes 10,000 USDC to the caller for testing
-     * @dev Convenience function for hackathon demos and testing workflows.
+     * @dev Convenience function for development and testing workflows.
      *      Can be called unlimited times by any address.
      *      
      *      Typical usage flow:

@@ -343,7 +343,7 @@ export default function Home() {
         </section>
 
         {/* SECTION: ABOUT FUNDIF */}
-        <section className="py-32 px-6 bg-gradient-to-b from-[#000] to-[#09090b]">
+        <section className="py-32 px-6 bg-black">
           <div className="max-w-6xl mx-auto">
             <Reveal className="mb-20 text-center" delay={0}>
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">

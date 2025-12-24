@@ -387,7 +387,7 @@ export default function CreateCampaignPage() {
                 <div className="flex items-center justify-between mt-1">
                   <code className="text-xs text-zinc-300 font-mono bg-black/30 px-2 py-1 rounded">{hash?.slice(0,20)}...</code>
                   <a 
-                    href={`https://sepolia.basescan.org/tx/${hash}`} 
+                    href={`https://basescan.org/tx/${hash}`} 
                     target="_blank" 
                     rel="noreferrer"
                     className="text-xs text-lime-400 hover:text-lime-300 flex items-center gap-1"
@@ -461,7 +461,7 @@ export default function CreateCampaignPage() {
               <div>
                 <h3 className="text-sm font-semibold text-amber-200">Wrong Network</h3>
                 <p className="text-xs text-amber-200/80 mt-1">
-                  Your wallet is on Chain ID {chainId || 'unknown'}. Please switch to Base Sepolia (Chain ID: {BASE_SEPOLIA_CHAIN_ID}).
+                  Your wallet is on Chain ID {chainId || 'unknown'}. Please switch to Base (Chain ID: {BASE_SEPOLIA_CHAIN_ID}).
                 </p>
               </div>
             </div>
@@ -782,7 +782,7 @@ export default function CreateCampaignPage() {
                   </motion.button>
                 )}
                 <p className="text-center text-xs text-zinc-600 mt-4">
-                  This will create an immutable smart contract on Base Sepolia.
+                  This will create an immutable smart contract on Base.
                 </p>
               </div>
 

@@ -19,7 +19,7 @@ const Icons = {
 };
 
 export function CreatorBadge({ address, label = "Recipient" }: { address: Address; label?: string }) {
-  // Resolves Basename on Base Sepolia (Chain ID 84532)
+  // Resolves Basename on Base
   const { data: basename } = useEnsName({
     address,
     chainId: 84532, 

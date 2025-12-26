@@ -77,11 +77,11 @@ export default function TokenPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="text-xs font-mono text-zinc-500 uppercase tracking-wider mb-1">Contract Address</div>
-                              <div className="text-sm font-mono text-zinc-300">Coming Soon</div>
+                              <div className="text-sm font-mono text-zinc-300">AvfcPZqeGL21bVugrknQDuqP85Ejt7PdFs6bsuNKpump</div>
                             </div>
                             <button 
                               className="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                              disabled
+                              onClick={() => navigator.clipboard.writeText('AvfcPZqeGL21bVugrknQDuqP85Ejt7PdFs6bsuNKpump')}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />

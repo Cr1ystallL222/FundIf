@@ -45,8 +45,8 @@ import { Vortex } from '@/components/ui/vortex'
 // Footer Component
 export function Footer() {
     const socialLinks = [
-        { href: 'https://t.me', label: 'Telegram', icon: TelegramIcon },
-        { href: 'https://x.com', label: 'X', icon: XIcon },
+        { href: 'https://t.me/Fundlf', label: 'Telegram', icon: TelegramIcon },
+        { href: 'https://x.com/Fund_fl', label: 'X', icon: XIcon },
     ]
 
     return (
@@ -130,10 +130,10 @@ export function Footer() {
                                 <div>
                                     <h4 className="text-white text-sm font-semibold mb-3">Community</h4>
                                     <nav className="flex flex-col gap-2">
-                                        <a href="https://t.me" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-lime-400 text-sm transition-colors">
+                                        <a href="https://t.me/Fundlf" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-lime-400 text-sm transition-colors">
                                             Telegram
                                         </a>
-                                        <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-lime-400 text-sm transition-colors">
+                                        <a href="https://x.com/Fund_fl" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-lime-400 text-sm transition-colors">
                                             X (Twitter)
                                         </a>
                                     </nav>

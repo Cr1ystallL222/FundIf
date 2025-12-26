@@ -244,11 +244,11 @@ export default function FundIfDocs() {
 
             <div className="mt-10 pt-6 border-t border-zinc-800 space-y-3">
               <h4 className="px-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-2">Community</h4>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-400 hover:text-white hover:border-zinc-600 transition-all group">
+              <a href="https://x.com/Fund_fl" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-400 hover:text-white hover:border-zinc-600 transition-all group">
                 <XIcon />
                 <span className="group-hover:translate-x-1 transition-transform">Follow on X</span>
               </a>
-              <a href="https://telegram.org" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-400 hover:text-[#0088cc] hover:border-[#0088cc]/30 transition-all group">
+              <a href="https://t.me/Fundlf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-400 hover:text-[#0088cc] hover:border-[#0088cc]/30 transition-all group">
                 <TelegramIcon />
                 <span className="group-hover:translate-x-1 transition-transform">Join Telegram</span>
               </a>
